@@ -1,0 +1,30 @@
+{
+	// easycom：wot-design-uni 的唯一引入方式（AGENTS.md 组件引入红线）。
+	// 只有模板里真实出现过的 wd-* 才会进包，这是主包体积预算的前提。
+	// ⚠️ 改这里不会触发重编译，改完要顺手改动一个页面文件。
+	"easycom": {
+		"autoscan": true,
+		"custom": {
+			"^wd-(.*)": "wot-design-uni/components/wd-$1/wd-$1.vue"
+		}
+	},
+	"pages": [
+		// pages 数组中第一项表示应用启动页
+		{
+			"path": "pages/index/index",
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTitleText": "一拍记"
+			}
+		}
+	],
+	"globalStyle": {
+		"navigationBarTextStyle": "black",
+		"navigationBarTitleText": "一拍记",
+		// 下面两个色值必须与 design/tokens/tokens.json 的 color.bg.base (#FAF9F5) 保持一致。
+		// 这是全工程**唯一**允许出现字面色值的地方：导航栏底色由平台读取，只接受字面量，
+		// 无法引用 SCSS 变量或 CSS 自定义属性。改 token 时记得同步这里。
+		"navigationBarBackgroundColor": "#FAF9F5",
+		"backgroundColor": "#FAF9F5"
+	}
+}

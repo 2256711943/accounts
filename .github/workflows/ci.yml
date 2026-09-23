@@ -1,0 +1,143 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# CI — 一拍记 SnapLedger 质量门禁
+#
+# 覆盖 AGENTS.md「修改后必须执行」+ README「质量门禁」里可在 CI 复现的部分：
+#   环境核对 → token 产物同步 → Figma 插件 mock → 类型检查 → 代码规范 → 双端构建
+#
+# 两个 job 并行，任一个红即失败：
+#   quality  静态质量门禁
+#   build    H5 + 微信小程序 生产构建，产物留存 7 天
+# 想改成「质量通过才构建」，给 build 加一行 `needs: quality` 即可。
+# ─────────────────────────────────────────────────────────────────────────────
+
+name: CI
+
+on:
+  push:
+    # 只改文档/截图时不必跑构建，省额度
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'design/screenshots/**'
+  pull_request:
+  workflow_dispatch:
+
+# 同一分支连续提交时，自动取消上一轮未跑完的流水线
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# 最小权限：CI 只读仓库内容
+permissions:
+  contents: read
+
+env:
+  # 与本机开发环境一致（engines 要求 >=18），避免「本地能跑、CI 报错」
+  NODE_VERSION: '22'
+  # Linux runner 上没有 Microsoft YaHei；
+  # scripts/check-figma-plugin.mjs 内置的 inter-only 开关就是给这种场景用的
+  SG_MOCK_FONTS: inter-only
+
+jobs:
+  # ── 静态质量门禁 ────────────────────────────────────────────────────────────
+  quality:
+    name: 静态质量门禁
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 配置 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      # 工程 .npmrc 把 npm 缓存指到了仓库内（.npm-cache，为绕开本机沙箱的写入限制），
+      # CI 里没有这个限制，且缓存放仓库内会污染工作区 —— 显式改用 runner 临时目录。
+      # 命令行的 --cache 优先级高于 .npmrc，覆盖有效。
+      - name: 恢复 npm 缓存
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/npm-cache
+          key: ${{ runner.os }}-node${{ env.NODE_VERSION }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node${{ env.NODE_VERSION }}-
+
+      - name: 安装依赖（严格按 lockfile）
+        run: npm ci --cache "$RUNNER_TEMP/npm-cache" --no-audit --no-fund
+
+      # README「交付检查清单」里有一项单独核对 sass 版本，这里让 CI 也卡住它
+      - name: 环境信息 · 核对 sass 锁版本
+        run: |
+          node -v
+          npm -v
+          # 不用 require('sass/package.json')：sass 的 exports 字段未导出该子路径，会报
+          # ERR_PACKAGE_PATH_NOT_EXPORTED，直接读文件更稳
+          SASS_VERSION=$(node -p "JSON.parse(require('fs').readFileSync('node_modules/sass/package.json','utf8')).version")
+          echo "sass = $SASS_VERSION"
+          if [ "$SASS_VERSION" != "1.78.0" ]; then
+            echo "::error::sass 必须锁死 1.78.0（AGENTS.md / README 硬约束），当前为 $SASS_VERSION"
+            exit 1
+          fi
+
+      # 禁止手改产物：tokens.scss 与 Figma 插件 token 区必须由 tokens.json 生成
+      - name: Token 产物同步校验
+        run: npm run gen:tokens:check
+
+      - name: Figma 插件 mock 校验
+        run: npm run check:figma
+
+      - name: 类型检查（vue-tsc --noEmit）
+        run: npm run type-check
+
+      - name: 代码规范（eslint + stylelint）
+        run: npm run lint
+
+  # ── 双端生产构建 ────────────────────────────────────────────────────────────
+  build:
+    name: 双端生产构建
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 配置 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: 恢复 npm 缓存
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/npm-cache
+          key: ${{ runner.os }}-node${{ env.NODE_VERSION }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node${{ env.NODE_VERSION }}-
+
+      - name: 安装依赖（严格按 lockfile）
+        run: npm ci --cache "$RUNNER_TEMP/npm-cache" --no-audit --no-fund
+
+      # AGENTS.md 红线：禁止「单端可用」的提交，所以两端都必须构建成功
+      - name: 构建 H5
+        run: npm run build:h5
+
+      - name: 构建微信小程序
+        run: npm run build:mp-weixin
+
+      - name: 留存 H5 产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-h5
+          path: dist/build/h5
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: 留存小程序产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-mp-weixin
+          path: dist/build/mp-weixin
+          if-no-files-found: error
+          retention-days: 7

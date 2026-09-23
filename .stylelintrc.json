@@ -1,0 +1,46 @@
+{
+  "extends": ["stylelint-config-standard-scss", "stylelint-config-recommended-vue/scss"],
+  "rules": {
+    "unit-no-unknown": [true, { "ignoreUnits": ["rpx"] }],
+    "selector-type-no-unknown": [
+      true,
+      {
+        "ignoreTypes": [
+          "page",
+          "view",
+          "text",
+          "image",
+          "navigator",
+          "scroll-view",
+          "swiper",
+          "swiper-item",
+          "movable-area",
+          "movable-view",
+          "cover-view",
+          "cover-image",
+          "rich-text",
+          "web-view",
+          "canvas",
+          "picker",
+          "picker-view",
+          "input",
+          "textarea",
+          "button",
+          "form",
+          "label",
+          "checkbox",
+          "radio",
+          "switch",
+          "slider",
+          "progress",
+          "icon"
+        ]
+      }
+    ],
+    "selector-pseudo-class-no-unknown": [true, { "ignorePseudoClasses": ["deep", "global"] }],
+    "scss/function-no-unknown": [true, { "ignoreFunctions": ["sg-token"] }],
+    "no-descending-specificity": null,
+    "selector-class-pattern": null,
+    "custom-property-empty-line-before": null
+  }
+}

@@ -1,0 +1,300 @@
+// ═══════════════════════════════════════════════════════════════════════════
+// src/styles/tokens.scss —— 【自动生成，禁止手改】
+//
+// 单一来源：design/tokens/tokens.json
+// 重新生成：npm run gen:scss　（校验是否同步：npm run gen:tokens:check）
+//
+// 源版本：1.1.0　导出日期：2026-09-22
+// 来源说明：Figma Variables (01 Foundations)
+//
+// 本文件顶层零 CSS 输出，import 任意次都不会产生重复样式。
+// CSS 自定义属性形态由文件末尾的 `sg-css-vars` mixin 提供，
+// 需在全局入口（App.vue 的 style）@include 恰好一次。
+// ═══════════════════════════════════════════════════════════════════════════
+
+// 共 63 个 token，命名规则见 docs/UI_SPEC.md §2.7
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 形态 1／2：SCSS 变量　（计算 + wot-theme.scss 主题映射消费这一份）
+// ─────────────────────────────────────────────────────────────────────────────
+
+/* color */
+// 页面底色（暖白）
+$color-bg-base: #FAF9F5;
+// 卡片、列表项
+$color-bg-surface: #FFFFFF;
+// 次级块、标签底、骨架屏底
+$color-bg-subtle: #F2F0E9;
+// 弹层遮罩
+$color-bg-mask: rgba(44,44,42,0.45);
+// 必要分割线，尽量少用
+$color-line: rgba(44,44,42,0.08);
+// 输入框边框、需强调的分隔
+$color-line-strong: rgba(44,44,42,0.16);
+// 主文案、支出金额
+$color-text-primary: #2C2C2A;
+// 辅助说明、时间、分类名
+$color-text-secondary: #6B6A64;
+// 占位符、禁用态
+$color-text-tertiary: #9C9A92;
+// 深底上的文字
+$color-text-inverse: #FFFFFF;
+// 唯一强调色：主按钮、FAB、选中态
+$color-accent: #E8663D;
+// 按压态
+$color-accent-pressed: #C9502C;
+// 强调色浅底（选中标签）
+$color-accent-soft: #FBEDE7;
+// 收入金额、同步成功
+$color-success: #2F8F7A;
+// 待同步、识别降级
+$color-warning: #D9952B;
+// 删除、同步失败
+$color-danger: #C4453C;
+// 中性提示（雾蓝）
+$color-info: #5B7A8C;
+$color-chart-c1: #E8663D;
+$color-chart-c2: #D9952B;
+$color-chart-c3: #2F8F7A;
+$color-chart-c4: #B4566E;
+$color-chart-c5: #5B7A8C;
+
+/* font */
+$font-family-sans: -apple-system, "PingFang SC", "HarmonyOS Sans SC", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+// 68rpx 首页本月总支出
+$fs-display: 34px;
+// 44rpx 页面大标题
+$fs-h1: 22px;
+// 34rpx 区块标题
+$fs-h2: 17px;
+// 30rpx 列表主文案
+$fs-body: 15px;
+// 26rpx 辅助说明
+$fs-caption: 13px;
+// 22rpx 标签、角标
+$fs-tiny: 11px;
+$font-weight-regular: 400;
+// 只有两档，再粗就廉价
+$font-weight-medium: 500;
+$font-line-height-display: 1.15;
+$font-line-height-h1: 1.3;
+$font-line-height-h2: 1.4;
+$font-line-height-body: 1.5;
+$font-line-height-caption: 1.4;
+
+/* space */
+// 8rpx 图标与文字间隙
+$sp-1: 4px;
+// 16rpx 标签内边距
+$sp-2: 8px;
+// 24rpx 卡片内元素间距
+$sp-3: 12px;
+// 32rpx 页面左右边距 / 卡片内边距
+$sp-4: 16px;
+// 40rpx 区块之间
+$sp-5: 20px;
+// 48rpx 大区块分隔
+$sp-6: 24px;
+// 64rpx 页面顶部大留白
+$sp-8: 32px;
+
+/* radius */
+// 16rpx 标签、角标
+$r-sm: 8px;
+// 24rpx 输入框、小卡片
+$r-md: 12px;
+// 32rpx 主卡片、FAB
+$r-lg: 16px;
+// 40rpx 底部抽屉顶部
+$r-xl: 20px;
+// 药丸按钮、头像
+$r-full: 999px;
+
+/* shadow */
+// 列表卡片
+$sh-1: 0 1px 2px rgba(44,44,42,0.04);
+// 悬浮 FAB、底部抽屉
+$sh-2: 0 4px 16px rgba(44,44,42,0.06);
+
+/* motion */
+// 按压反馈、标签切换
+$dur-fast: 120ms;
+// 列表项入场
+$dur-base: 200ms;
+// 页面转场、抽屉
+$dur-slow: 320ms;
+// 通用减速
+$ease-std: cubic-bezier(0.16, 1, 0.3, 1);
+// 小元素入场
+$ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+/* layout */
+// Figma 画板宽度（1x）
+$layout-design-width: 375;
+// 设计稿 1px = 代码 2rpx
+$layout-rpx-ratio: 2;
+// H5 宽屏内容容器上限
+$layout-h5-max-width: 480px;
+// 页面左右边距 32rpx
+$layout-page-padding: 16px;
+// 100rpx，另加 --safe-bottom
+$layout-tab-bar-height: 50px;
+// 另加 statusBarHeight
+$layout-nav-bar-height: 44px;
+// 112rpx
+$layout-fab-size: 56px;
+// 88rpx
+$layout-cell-min-height: 44px;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 扁平查询表 + 取用函数（sg-token("color-accent")）
+// ─────────────────────────────────────────────────────────────────────────────
+$sg-tokens: (
+  "color-bg-base": #FAF9F5,
+  "color-bg-surface": #FFFFFF,
+  "color-bg-subtle": #F2F0E9,
+  "color-bg-mask": rgba(44,44,42,0.45),
+  "color-line": rgba(44,44,42,0.08),
+  "color-line-strong": rgba(44,44,42,0.16),
+  "color-text-primary": #2C2C2A,
+  "color-text-secondary": #6B6A64,
+  "color-text-tertiary": #9C9A92,
+  "color-text-inverse": #FFFFFF,
+  "color-accent": #E8663D,
+  "color-accent-pressed": #C9502C,
+  "color-accent-soft": #FBEDE7,
+  "color-success": #2F8F7A,
+  "color-warning": #D9952B,
+  "color-danger": #C4453C,
+  "color-info": #5B7A8C,
+  "color-chart-c1": #E8663D,
+  "color-chart-c2": #D9952B,
+  "color-chart-c3": #2F8F7A,
+  "color-chart-c4": #B4566E,
+  "color-chart-c5": #5B7A8C,
+  "font-family-sans": (-apple-system, "PingFang SC", "HarmonyOS Sans SC", "Noto Sans SC", "Microsoft YaHei", sans-serif),
+  "fs-display": 34px,
+  "fs-h1": 22px,
+  "fs-h2": 17px,
+  "fs-body": 15px,
+  "fs-caption": 13px,
+  "fs-tiny": 11px,
+  "font-weight-regular": 400,
+  "font-weight-medium": 500,
+  "font-line-height-display": 1.15,
+  "font-line-height-h1": 1.3,
+  "font-line-height-h2": 1.4,
+  "font-line-height-body": 1.5,
+  "font-line-height-caption": 1.4,
+  "sp-1": 4px,
+  "sp-2": 8px,
+  "sp-3": 12px,
+  "sp-4": 16px,
+  "sp-5": 20px,
+  "sp-6": 24px,
+  "sp-8": 32px,
+  "r-sm": 8px,
+  "r-md": 12px,
+  "r-lg": 16px,
+  "r-xl": 20px,
+  "r-full": 999px,
+  "sh-1": 0 1px 2px rgba(44,44,42,0.04),
+  "sh-2": 0 4px 16px rgba(44,44,42,0.06),
+  "dur-fast": 120ms,
+  "dur-base": 200ms,
+  "dur-slow": 320ms,
+  "ease-std": cubic-bezier(0.16, 1, 0.3, 1),
+  "ease-spring": cubic-bezier(0.34, 1.56, 0.64, 1),
+  "layout-design-width": 375,
+  "layout-rpx-ratio": 2,
+  "layout-h5-max-width": 480px,
+  "layout-page-padding": 16px,
+  "layout-tab-bar-height": 50px,
+  "layout-nav-bar-height": 44px,
+  "layout-fab-size": 56px,
+  "layout-cell-min-height": 44px,
+) !default;
+
+@function sg-token($name) {
+  @if not map-has-key($sg-tokens, $name) {
+    @error "未知 design token: #{$name}（检查 design/tokens/tokens.json 或 docs/UI_SPEC.md §2.7）";
+  }
+  @return map-get($sg-tokens, $name);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 形态 2／2：CSS 自定义属性
+//
+// 选择器必须写 `:root, page` —— H5 的默认值挂在 :root，
+// 小程序挂在 page，只写一个会单端失效（ARCHITECTURE.md §3.5 硬约束 2）。
+//
+// ⚠️ 只允许在全局入口 include 一次，否则 CSS 重复输出。
+// ─────────────────────────────────────────────────────────────────────────────
+@mixin sg-css-vars {
+  :root,
+  page {
+    --color-bg-base: #FAF9F5;
+    --color-bg-surface: #FFFFFF;
+    --color-bg-subtle: #F2F0E9;
+    --color-bg-mask: rgba(44,44,42,0.45);
+    --color-line: rgba(44,44,42,0.08);
+    --color-line-strong: rgba(44,44,42,0.16);
+    --color-text-primary: #2C2C2A;
+    --color-text-secondary: #6B6A64;
+    --color-text-tertiary: #9C9A92;
+    --color-text-inverse: #FFFFFF;
+    --color-accent: #E8663D;
+    --color-accent-pressed: #C9502C;
+    --color-accent-soft: #FBEDE7;
+    --color-success: #2F8F7A;
+    --color-warning: #D9952B;
+    --color-danger: #C4453C;
+    --color-info: #5B7A8C;
+    --color-chart-c1: #E8663D;
+    --color-chart-c2: #D9952B;
+    --color-chart-c3: #2F8F7A;
+    --color-chart-c4: #B4566E;
+    --color-chart-c5: #5B7A8C;
+    --font-family-sans: -apple-system, "PingFang SC", "HarmonyOS Sans SC", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+    --fs-display: 34px;
+    --fs-h1: 22px;
+    --fs-h2: 17px;
+    --fs-body: 15px;
+    --fs-caption: 13px;
+    --fs-tiny: 11px;
+    --font-weight-regular: 400;
+    --font-weight-medium: 500;
+    --font-line-height-display: 1.15;
+    --font-line-height-h1: 1.3;
+    --font-line-height-h2: 1.4;
+    --font-line-height-body: 1.5;
+    --font-line-height-caption: 1.4;
+    --sp-1: 4px;
+    --sp-2: 8px;
+    --sp-3: 12px;
+    --sp-4: 16px;
+    --sp-5: 20px;
+    --sp-6: 24px;
+    --sp-8: 32px;
+    --r-sm: 8px;
+    --r-md: 12px;
+    --r-lg: 16px;
+    --r-xl: 20px;
+    --r-full: 999px;
+    --sh-1: 0 1px 2px rgba(44,44,42,0.04);
+    --sh-2: 0 4px 16px rgba(44,44,42,0.06);
+    --dur-fast: 120ms;
+    --dur-base: 200ms;
+    --dur-slow: 320ms;
+    --ease-std: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+    --layout-design-width: 375;
+    --layout-rpx-ratio: 2;
+    --layout-h5-max-width: 480px;
+    --layout-page-padding: 16px;
+    --layout-tab-bar-height: 50px;
+    --layout-nav-bar-height: 44px;
+    --layout-fab-size: 56px;
+    --layout-cell-min-height: 44px;
+  }
+}

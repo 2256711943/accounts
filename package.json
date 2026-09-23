@@ -1,0 +1,59 @@
+{
+  "name": "snapledger",
+  "version": "0.1.0",
+  "private": true,
+  "description": "一拍记 SnapLedger — uni-app 一套代码出微信小程序 + H5 的 AI 拍照记账应用",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "dev:h5": "uni",
+    "dev:mp-weixin": "uni -p mp-weixin",
+    "build:h5": "uni build",
+    "build:mp-weixin": "uni build -p mp-weixin",
+    "type-check": "vue-tsc --noEmit",
+    "lint": "npm run lint:js && npm run lint:style",
+    "lint:js": "eslint . --ext .js,.ts,.vue --max-warnings 0",
+    "lint:js:fix": "eslint . --ext .js,.ts,.vue --fix",
+    "lint:style": "stylelint \"src/**/*.{vue,scss,css}\"",
+    "lint:style:fix": "stylelint \"src/**/*.{vue,scss,css}\" --fix",
+    "check": "npm run type-check && npm run lint",
+    "gen:scss": "node scripts/gen-scss.mjs",
+    "gen:figma": "node scripts/gen-figma-tokens.mjs",
+    "gen:tokens": "npm run gen:scss && npm run gen:figma",
+    "gen:tokens:check": "node scripts/gen-scss.mjs --check && node scripts/gen-figma-tokens.mjs --check",
+    "check:figma": "node scripts/check-figma-plugin.mjs"
+  },
+  "dependencies": {
+    "@dcloudio/uni-app": "3.0.0-5020420260813003",
+    "@dcloudio/uni-components": "3.0.0-5020420260813003",
+    "@dcloudio/uni-h5": "3.0.0-5020420260813003",
+    "@dcloudio/uni-mp-weixin": "3.0.0-5020420260813003",
+    "pinia": "^2.2.6",
+    "vue": "^3.4.21",
+    "vue-i18n": "^9.1.9",
+    "wot-design-uni": "1.14.0"
+  },
+  "devDependencies": {
+    "@dcloudio/types": "^3.4.8",
+    "@dcloudio/uni-automator": "3.0.0-5020420260813003",
+    "@dcloudio/uni-cli-shared": "3.0.0-5020420260813003",
+    "@dcloudio/uni-stacktracey": "3.0.0-5020420260813003",
+    "@dcloudio/vite-plugin-uni": "3.0.0-5020420260813003",
+    "@typescript-eslint/eslint-plugin": "^7.18.0",
+    "@typescript-eslint/parser": "^7.18.0",
+    "@vue/runtime-core": "^3.4.21",
+    "@vue/tsconfig": "^0.9.1",
+    "eslint": "^8.57.1",
+    "eslint-plugin-vue": "^9.28.0",
+    "postcss-html": "^1.7.0",
+    "postcss-scss": "^4.0.9",
+    "sass": "1.78.0",
+    "stylelint": "^16.10.0",
+    "stylelint-config-recommended-vue": "^1.5.0",
+    "stylelint-config-standard-scss": "^13.1.0",
+    "typescript": "^5.6.3",
+    "vite": "5.2.8",
+    "vue-tsc": "^2.1.10"
+  }
+}

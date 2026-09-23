@@ -1,0 +1,6 @@
+# 生成产物：禁止 lint / 禁止手工修改
+# src/styles/tokens.scss 由 npm run gen:scss 从 tokens.json 生成，
+# 变量命名与排序都由脚本决定，过 lint 没有意义。
+src/styles/tokens.scss
+dist/
+node_modules/
