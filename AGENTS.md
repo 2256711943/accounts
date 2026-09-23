@@ -38,7 +38,7 @@
 | 分包页面 | `src/pages-capture/` · `src/pages-stats/` · `src/pages-detail/` |
 | 自研原子组件 | `src/components/{Name}/index.vue` |
 | 业务组件 | `src/components/biz/{Name}.vue` |
-| 跨端适配 | `src/adapters/{capability}.{mp\|h5}.ts`（+ `types.ts` / `index.ts`） |
+| 跨端适配 | `src/adapters/{capability}.ts`（+ `types.ts` / `index.ts`）——**单文件 + 函数体内 `#ifdef`**；禁拆 `.mp.ts` / `.h5.ts`（uni-app 不解析平台后缀文件，见 `ARCHITECTURE.md §3.3`） |
 | 业务流程服务 | `src/services/{domain}/{file}.ts` |
 | 状态 | `src/stores/{name}.ts` |
 | 接口模块 | `src/api/modules/{domain}.ts` |

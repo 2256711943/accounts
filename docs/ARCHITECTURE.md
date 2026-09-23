@@ -206,6 +206,16 @@ export interface IDevice { platform(): 'ios' | 'android' | 'devtools'; online():
 
 **能力探测与降级原则**：适配层方法**永不抛出未捕获异常**。任何平台能力缺失时返回「明确的降级结果」，由 `services/` 决定业务降级路径（例：相机授权被拒 → 返回值带 `denied: true` → 识别页切到手动表单）。
 
+**文件组织：单文件 + 函数体内 `#ifdef`，不做 `.mp.ts` / `.h5.ts` 拆分**（实测结论，2026-09-23 接入云开发时确认）：
+
+- `uni-app` 3.0 的 `resolve.extensions` 只含 `.uts / .mjs / .js / .ts / .jsx / .tsx / .json`（+ `.vue`），
+  **不含任何平台后缀**；全量 grep `@dcloudio/**` 也没有平台后缀文件的解析插件
+  （只有 `json/pages.js` 的 `platforms/<platform>/` 目录约定 —— 那是给**页面**用的，不适用于普通模块）。
+- 退一步用 `index.ts` 手动分支选择同样不行：注释形式的 `#ifdef` 对 `tsc` 不可见，两条分支都会参与类型检查，
+  于是 `export * from './x.mp'` 与 `'./x.h5'` 会报 **TS2308**（同名导出重声明），两侧 `import` 同名则报重复标识符。
+- 结论：平台差异收敛在**单个文件**内的 `#ifdef` 块中。`adapters/` 仍是**唯一** `#ifdef` 发生地（红线 2 不变），
+  只是「文件数量」从「每能力两个」变为「每能力一个」。
+
 ### 3.4 数据通道抽象
 
 `src/api/client.ts` 暴露一个统一的 `call<T>(name, payload)`：
@@ -408,11 +418,11 @@ accounts/
 │  └─ check-figma-plugin.mjs   mock 运行 Figma 插件，抓运行时错误（不用开 Figma）
 ├─ src/
 │  ├─ adapters/                ★ 跨端适配层（唯一 #ifdef 发生地）
-│  │  ├─ types.ts  index.ts
-│  │  ├─ storage.mp.ts  storage.h5.ts
-│  │  ├─ auth.mp.ts     auth.h5.ts
-│  │  ├─ media.mp.ts    media.h5.ts
-│  │  └─ system.mp.ts   system.h5.ts
+│  │  ├─ types.ts              适配层接口定义（IStorage/IAuth/IMedia/IShared/ISystem/IDevice）
+│  │  ├─ cloud.ts              云开发初始化（initCloud）
+│  │  ├─ storage.ts  auth.ts   单文件 + 函数体内 #ifdef
+│  │  ├─ media.ts   system.ts  ↑ 禁拆 .mp.ts / .h5.ts（工具链不解析平台后缀，见 §3.3）
+│  │  └─ index.ts              统一出口
 │  ├─ api/
 │  │  ├─ client.ts             统一请求器
 │  │  └─ modules/{record,category,stats,perf}.ts
