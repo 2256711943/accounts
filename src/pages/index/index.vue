@@ -19,16 +19,81 @@
       </view>
     </view>
 
+    <view class="card">
+      <text class="card__title">数据通道自检</text>
+
+      <view class="row">
+        <view class="dot" :class="dotModifier" />
+        <text class="row__label">{{ channelText }}</text>
+      </view>
+    </view>
+
     <wd-button type="primary" @click="onCheck">组件库可用</wd-button>
+    <wd-button :loading="pending" @click="onCheckChannel">数据通道自检</wd-button>
   </view>
 </template>
 
 <script setup lang="ts">
 /**
- * D1 占位首页 —— 只用于验证双端脚手架与组件库，D5 会换成真正的账单首页。
+ * D1 占位首页 —— 只用于验证双端脚手架、组件库与数据通道，D5 会换成真正的账单首页。
  */
+import { computed, ref } from 'vue';
+import { ApiCallError, call } from '@/api/client';
+
 function onCheck() {
   uni.showToast({ title: 'wot-design-uni 已接入', icon: 'none' });
+}
+
+type ChannelStatus = 'idle' | 'pending' | 'ok' | 'fail';
+
+const status = ref<ChannelStatus>('idle');
+const detail = ref('');
+
+const pending = computed(() => status.value === 'pending');
+
+const dotModifier = computed(() => {
+  if (status.value === 'ok') return 'dot--success';
+  if (status.value === 'fail') return 'dot--fail';
+  return '';
+});
+
+const channelText = computed(() => {
+  switch (status.value) {
+    case 'pending':
+      return '检测中…';
+    case 'ok':
+      return `通道已打通。${detail.value}`;
+    case 'fail':
+      return `通道失败：${detail.value}`;
+    default:
+      return '未检测：点下方按钮验证「页面 → api/client → adapters/cloud → 云函数」整条链路。';
+  }
+});
+
+/**
+ * 数据通道自检。
+ *
+ * 故意调 `record.list` —— §6 已定义但 D4 才实现。此时**预期**拿到 `UNKNOWN_ACTION`：
+ * 能拿到这个业务错误码本身就证明链路是通的（请求到了云函数、信封被正确解析）。
+ * 若拿到 `NETWORK` 错误，才是真正的通道问题（SDK 未初始化 / 域名不通 / 路由未配）。
+ */
+async function onCheckChannel() {
+  status.value = 'pending';
+  detail.value = '';
+  try {
+    await call('record.list', { limit: 1 });
+    // 走到这里说明 record.list 已实现（D4 之后）
+    status.value = 'ok';
+    detail.value = 'record.list 已返回数据。';
+  } catch (err) {
+    if (err instanceof ApiCallError && err.code === 'UNKNOWN_ACTION') {
+      status.value = 'ok';
+      detail.value = '云函数返回 UNKNOWN_ACTION（record.list 待 D4 实现），链路正常。';
+      return;
+    }
+    status.value = 'fail';
+    detail.value = err instanceof ApiCallError ? `${err.code} — ${err.message}` : String(err);
+  }
 }
 </script>
 
@@ -102,6 +167,10 @@ function onCheck() {
 
   &--success {
     background-color: var(--color-success);
+  }
+
+  &--fail {
+    background-color: var(--color-danger);
   }
 }
 </style>

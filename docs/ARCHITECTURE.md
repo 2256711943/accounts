@@ -80,6 +80,22 @@
 
 代价：多一跳云函数冷启动（首次 ~300ms）。用**常驻实例**（云函数最小实例数设为 1）缓解。
 
+**决策 4：H5 端采用「单用户 demo」身份，不做用户隔离**
+
+小程序端 `OPENID` 由云开发自动注入，天然完成隔离。但 HTTP 访问服务是**匿名入口**
+（2026-09-26 实测：`x-usertype: NONE`、`x-userid` 为空、`getWXContext().OPENID` 为 `undefined`），
+H5 端拿不到任何微信身份。三个选项：
+
+| 方案 | 结论 |
+|---|---|
+| **单用户 demo（采用）** | H5 全部请求归到同一个固定 `ownerId`，不做隔离。零额外配置，D4 数据通道立刻能跑通 |
+| CloudBase 匿名登录 | 需配 `queryAppAuth` + publishable key 换真实 uid，更正规，但引入额外交付面，超出 15 天范围 |
+| H5 只读演示数据 | 放弃 H5 写入能力，与 `SPEC.md` US-05「H5 完成一次记账全流程」直接冲突 → 否决 |
+
+**代价（必须主动写清，否则面试会被追问）**：H5 端的 `ownerId` 是服务端写死的常量，
+**不是真实身份**，因此 H5 端**没有数据隔离能力** —— 任何人打开 H5 都会看到同一份数据。
+这是演示性质的取舍，不是安全设计。小程序端不受影响，仍是真实 `OPENID` 隔离。
+
 ---
 
 ## 2. 整体架构
@@ -227,8 +243,35 @@ export async function call<T>(action: string, payload: unknown): Promise<T>
 ```
 
 - 小程序端 → `adapters` 内 `callFunction`
-- H5 端 → 云函数 **HTTP 访问服务**（`https://<envId>.service.tcloudbase.com/ledger`）
+- H5 端 → 云函数 **HTTP 访问服务**，域名形如
+  `https://<envId>-<hash>.<region>.app.tcloudbase.com/ledger`
+  （`<hash>` 是环境生成的后缀，**无法由 envId 推断**，必须用 `queryGateway(listRoutes)`
+  或控制台查；本环境实测值：`https://cloud1-d3gqupt5l5a75414e-1494859063.ap-shanghai.app.tcloudbase.com/ledger`）
 - **同一套云函数代码，两个入口**，业务逻辑零重复 —— 这是本项目跨端设计的关键点
+
+**双入口实测结论（2026-09-26，网关→SCF 链路已验证）**：
+
+| 项 | 小程序入口 | H5 入口 |
+|---|---|---|
+| 判据 | `event.action` | `event.httpMethod`（仅网关触发时存在） |
+| action 来源 | `event.action` | **`event.path`**（网关剥掉 `/ledger` 前缀，剩 `/record.list`） |
+| payload 来源 | `event.payload` | `JSON.parse(event.body)`（body 是字符串） |
+| 身份 | `getWXContext().OPENID` | **无**（`x-usertype: NONE`，OPENID 为 undefined） |
+| 出参 | 直接返回 `{ ok, data }` | 同左 —— **网关把返回值当 JSON body 透传，状态码固定 200**，无需包 `{ statusCode, headers, body }` |
+| CORS | 不适用 | **网关自动处理**（回显 Origin，OPTIONS 预检返回 204），函数侧不参与 |
+
+归一化实现在 `cloudfunctions/ledger/index.js` 的 `normalize()`。
+
+> **归属身份归一（已决，见 §1.2 决策 4）**：`ownerId` 按入口解析 —— 小程序端取
+> `getWXContext().OPENID`，H5 端取固定常量 `H5_DEMO_OWNER_ID`。云函数以 admin 身份
+> 显式写入 `_openid: ownerId`，所有查询一律过滤 `_openid: ownerId`（红线 5 不变）。
+> ⚠️ H5 端因此**没有数据隔离**，是单用户 demo 的已知取舍，不是安全设计。
+
+> **平台分支的落点（红线 2 优先于本节示例）**：本节示例把 MP / H5 两种实现并列写在
+> `api/client.ts` 里，但红线 2 规定 `#ifdef` 只允许出现在 `adapters/` 内。因此差异
+> **不在 `client.ts` 里分支**，而是下沉：`adapters/cloud.ts` 暴露统一的
+> `callCloud<T>(action, payload)`，内部按端实现；`api/client.ts` 只负责拼 envelope、
+> 归一错误、重试去重（§3.2 职责表）。
 
 > 切换点：若将来要换成自建 NestJS，只需替换 `call()` 的实现与 `HTTP_BASE`，上层零改动。这也是「决策 2」敢押云开发的底气。
 
@@ -521,5 +564,5 @@ D3 新建 `styles/theme.scss`（全局样式入口）后，把这次 `@include` 
 | `sass` 版本不兼容 | 组件库样式编译报错 | `devDependencies` 锁 `sass@1.78.0`，不升到 1.79+ |
 | 组件库冷门问题搜不到答案 | 单个问题卡 > 1 小时 | 立即换自研或求助，不硬耗；只影响 1 个组件，不阻塞里程碑 |
 | 独立分包引用主包资源报错 | 编译报错 | 改为普通分包 + 预下载（损失一点启动收益，功能不受影响） |
-| H5 端云函数 HTTP 访问服务未开通 | H5 请求 404 | 临时把 H5 数据源切本地 mock（`client.ts` 加 `MOCK` 开关），不阻塞小程序主线 |
+| H5 端云函数 HTTP 访问服务未开通 | H5 请求 404 / `INVALID_PATH` | **已解除（2026-09-26 实测）**：网关总开关已开、路由 `/ledger` 已配、网关→SCF 与 CORS 均验证通过。⚠️ 换环境需重配，且 HTTPSERVICE 域名含**环境专属后缀**（`<envId>-<hash>.<region>.app.tcloudbase.com`），**无法由 envId 推断**，须用 `queryGateway(listRoutes)` 查；建议保留 `client.ts` 的 `MOCK` 开关作为兜底 |
 | 工期超支 | D12 仍有亮点未完成 | 按 H1 → H2 → H3 → H4 顺序保底；H3/H4 可降级为「方案 + 部分实现 + 压测脚本」，但**不接受零实现** |
