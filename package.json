@@ -18,9 +18,14 @@
     "lint:style": "stylelint \"src/**/*.{vue,scss,css}\"",
     "lint:style:fix": "stylelint \"src/**/*.{vue,scss,css}\" --fix",
     "check": "npm run type-check && npm run lint",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ledger": "vitest run cloudfunctions/ledger/__tests__",
     "gen:scss": "node scripts/gen-scss.mjs",
     "gen:figma": "node scripts/gen-figma-tokens.mjs",
     "gen:tokens": "npm run gen:scss && npm run gen:figma",
+    "gen:preview": "node scripts/gen-preview.mjs",
+    "gen:preview:variants": "node scripts/gen-preview.mjs --variants",
     "gen:tokens:check": "node scripts/gen-scss.mjs --check && node scripts/gen-figma-tokens.mjs --check",
     "check:figma": "node scripts/check-figma-plugin.mjs"
   },
@@ -54,6 +59,7 @@
     "stylelint-config-standard-scss": "^13.1.0",
     "typescript": "^5.6.3",
     "vite": "5.2.8",
+    "vitest": "^3.2.7",
     "vue-tsc": "^2.1.10"
   }
 }

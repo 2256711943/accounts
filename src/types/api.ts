@@ -17,8 +17,14 @@ export type ApiAction =
   | 'user.login'
   | 'subscribe.register';
 
-/** 错误码。云函数当前只产出前两个，D4 补业务 action 时按需扩充 */
-export type ApiErrorCode = 'INVALID_PARAM' | 'UNKNOWN_ACTION';
+/** 错误码。与 cloudfunctions/ledger/logic.js 的 ERR 保持一致 */
+export type ApiErrorCode =
+  | 'INVALID_PARAM'
+  | 'UNKNOWN_ACTION'
+  | 'NOT_FOUND'
+  | 'CONFLICT'
+  | 'DUPLICATED'
+  | 'DB_ERROR';
 
 /** 失败信封（§6：`{ ok:false, error:{ code } }`） */
 export interface ApiError {

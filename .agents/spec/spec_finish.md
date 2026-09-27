@@ -1,7 +1,16 @@
 # spec_finish — 已完成工作记录
 
 > 更新时间：2026-09-26 ｜ 对应 `docs/DEV_PLAN.md` 的 **D4（云开发接入，止损点）**
-> 结论：**D4 的地基与止损判定已完成——云开发在 uni-app 中双端跑通，无需启用备选方案。D4 的业务 action 尚未实现。**
+> 结论：**D4 全部完成——云开发双端跑通，三个业务 action（upsert / list / remove）通过 18 个 Vitest 单测，且真实云端 DoD 已执行通过。**
+> 云端收尾（2026-09-26，走 tcb CLI / node-spawn 通道完成）：
+> - 新建 `ledger_records` 集合成功
+> - 部署 ledger 云函数（本地 D4 完整代码覆盖旧 ping 骨架）
+> - 云函数超时调到 20s（Nodejs16.13 / 256MB）
+> - DoD 验证：upsert create 写入 1 条（`_id ff4bc26…`，`_openid=h5-demo-single-user`，version 1），
+>   `record.list` 读回同 1 条、hasMore:false，MCP 只读查库确认落库一致。
+> 新增：项目根 `cloudbaserc.json`（环境+ledger 部署配置，timeout 20，值得入库）。
+> ⚠️ 踩坑记录：本 IDE 的 CloudBase MCP 无管理工具，且 `tcb` 经 PowerShell/npx 调用 JSON 会二次转义；
+> 解法 = 用 Node `spawnSync(process.execPath, [cli.js, ...])` 参数数组直调 CLI standalone 入口（见下）
 
 ---
 
@@ -151,15 +160,70 @@ D1 占位首页新增「数据通道自检」卡片 + 按钮，用于人肉验�
 
 ---
 
+## 4.1 本次追加：D4 业务 action + Vitest（2026-09-26）
+
+在上一轮「地基跑通」基础上，本轮补齐 D4 全部业务代码层，并引入 Vitest 单测。
+
+### 4.1.1 架构调整：业务逻辑下沉到 `logic.js`
+
+`cloudfunctions/ledger/index.js` 改为**入口胶水层**（双入口归一化 + 身份归一化 + 路由分发），
+业务逻辑全部移到新增的 `cloudfunctions/ledger/logic.js`，通过 `createLedgerHandlers({ db, now })` 注入 db 与时钟。
+
+- 为什么：`index.js` 顶层 `require('wx-server-sdk')` 依赖云上环境，本地无法直接 require 单测；
+  而「幂等 / 乐观并发 / 软删除 / 游标分页」正是要测的简历级逻辑。抽层后测试注入内存 db 即可覆盖全部业务路径。
+- 接口契约写在 `logic.js` 顶部（db 需满足的方法子集），内存实现见测试目录 `__tests__/memory-db.js`。
+
+### 4.1.2 三个业务 action 落地
+
+| action | 关键设计 |
+|---|---|
+| `record.upsert` | `(clientId, _openid)` 复合幂等键；`create` 命中已存在 → `duplicated:true` 不重复建；`update` 带 `baseVersion` 乐观并发，落后 → `conflict:true` 返回服务端文档由客户端 LWW；写操作经 `pickWritable` 白名单，防客户端写穿 `_openid`/`clientId`/`version` |
+| `record.list` | 游标 = `Base64("happenedAt:clientId")`，排序 `happenedAt` 倒序 + `clientId` 升序保证稳定可复现；支持 `since`/`categoryId` 过滤；默认 `deleted: _.neq(true)` 滤软删 |
+| `record.remove` | 软删除 `deleted: true`，返回 `{ ok }` |
+
+- 校验：入口统一过 `validate(action, payload)`；`amount` 强制整数分、`0 < amount ≤ 1e8`。
+- 错误码扩展：`UNKNOWN_ACTION` / `INVALID_PARAM` 之外新增 `NOT_FOUND` / `CONFLICT` / `DUPLICATED` / `DB_ERROR`，
+  已同步 `src/types/api.ts` 的 `ApiErrorCode`。
+
+### 4.1.3 Vitest 引入
+
+- 依赖：`vitest@3.2.7`（devDependency，匹配工程 vite 5.2.8）。
+- 配置：独立 `vitest.config.ts`（**不加载** uni-app 插件，只测 cloudfunctions 纯逻辑），include 仅 `cloudfunctions/**/__tests__/**/*.spec.mjs`。
+- 脚本：`npm test`（`vitest run`）、`npm run test:watch`、`npm run test:ledger`。
+- 测试文件：`cloudfunctions/ledger/__tests__/ledger.spec.mjs`（18 个用例）+ 内存 db 适配器 `memory-db.js`。
+  - 使用 `.mjs` 而非 `.js`：Vitest 测试文件须为 ESM；init 时验证过 `.js` 用 `require` 引 vitest 会报错。
+  - `.mjs` 被 `.eslintrc` 的 `ignorePatterns: ['*.mjs']` 忽略，由 vitest 自己解析，与 eslint 无冲突。
+
+### 4.1.4 测试覆盖（18 个用例）
+
+- `validate`：payload 非对象、clientId 必填、op 白名单、update 必带 baseVersion、limit 范围。
+- `isValidAmount`：整数分 / >0 / ≤1e8 边界。
+- upsert·create：落 `_openid`+version=1、重复 clientId → duplicated 且不增行、幂等键含 `_openid`（不同 owner 同 clientId 各自建）、amount 非法不落库。
+- upsert·update：baseVersion 匹配覆盖并 +1、落后 → conflict 不覆盖、不存在 → NOT_FOUND。
+- remove：软删落库 + list 滤掉、不存在 → NOT_FOUND、不能删他人账单。
+- list：倒序、游标翻页不重不漏、categoryId/since 过滤、`_openid` 隔离。
+
+### 4.1.5 检验结果
+
+- `npm run test`：18/18 通过
+- `npm run type-check`：通过（exit 0）
+- `npm run lint`：通过（eslint + stylelint，exit 0）
+- `npm run build:h5`：构建成功
+- 示例调试过程：曾因内存 db 适配器与 `handleList` 的 `coll` 未声明、测试种子把 `type` 字段覆盖丢失导致用例失败，均已修复。
+
+---
+
 ## 5. 未完成 / 待办
 
-### 5.1 D4 剩余主体（下一步）
+### 5.1 D4 剩余主体（已完成，2026-09-26）
 
-- [ ] 云函数 `validate()`：入参校验
-- [ ] `record.upsert`（`clientId` 唯一索引实现幂等 + `version`/`baseVersion` 乐观并发）
-- [ ] `record.list`（游标分页、按 `happenedAt` 倒序）
-- [ ] 所有读写在云函数内**强制注入 / 过滤 `_openid`**（架构红线 5）
+- [x] 云函数 `validate()`：入参校验
+- [x] `record.upsert`（`(clientId, _openid)` 幂等键 + `version`/`baseVersion` 乐观并发 + 字段白名单）
+- [x] `record.list`（游标分页、`happenedAt` 倒序 + `clientId` 升序复合键、`since`/`categoryId` 过滤）
+- [x] `record.remove`（软删除 `deleted: true`）
+- [x] 所有读写在云函数内**强制注入 / 过滤 `_openid`**（架构红线 5）
 - [ ] 达成 D4 DoD：双端各写一条账单，云数据库控制台确认 `_openid` 正确隔离；重复提交同一 `clientId` 不产生第二条
+      —— ⚠️ 真实云端验证待部署，见 §4.1
 
 ### 5.2 已知待处理项
 
@@ -178,15 +242,19 @@ D1 占位首页新增「数据通道自检」卡片 + 按钮，用于人肉验�
  M .env.example
  M cloudfunctions/ledger/index.js
  M docs/ARCHITECTURE.md
+ M package.json
  M src/adapters/cloud.ts
  M src/env.d.ts
  M src/pages/index/index.vue
+ M src/types/api.ts
 ?? .agents/
 ?? .claude/
 ?? skills-lock.json
 ?? src/api/
-?? src/types/api.ts
 ?? src/types/model.ts
+?? vitest.config.ts
+?? cloudfunctions/ledger/logic.js
+?? cloudfunctions/ledger/__tests__/
 ```
 
 最近提交：`7c2c9da chore(cloud): 接入微信云开发基础管线`、`6970950 chore: 初始化工程脚手架与设计基建（D1）`

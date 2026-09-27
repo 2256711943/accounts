@@ -1,6 +1,7 @@
 // 云函数：ledger —— 一拍记统一数据通道入口
 //
-// 现状：action 路由骨架 + 双入口归一化已打通（D4 之前的地基）。
+// 本文件是「入口胶水层」：只负责双入口归一化 + 身份归一化 + 路由分发，
+// 业务逻辑全部在逻辑层 logic.js（可注入 db、可单测）。
 //
 // 双入口归一化规则 —— 2026-09-26 实测确定，不要凭文档推断：
 //   小程序：wx.cloud.callFunction({ name:'ledger', data:{ action, payload } })
@@ -9,28 +10,19 @@
 //           → event = { httpMethod, path:'/<action>', body:'<payload json>', ... }
 //           ⚠️ 网关 enablePathTransmission=false 会剥掉 /ledger 前缀，故 action 取自 path
 //           ⚠️ HTTP 入口是匿名身份（x-usertype: NONE / x-userid 空），OPENID 为 undefined
-//              → H5 的用户标识方案待定，见 ARCHITECTURE.md §6 的 user.login
-//   出参：两个入口都直接返回 { ok, data }，网关会把它当 JSON body 透传（状态码固定 200），
-//         因此无需包装 { statusCode, headers, body }
-//   CORS：网关自动处理（回显 Origin、OPTIONS 预检返回 204），函数侧不需要参与
-//
-// D4 待补齐：
-//   - validate()：入参 JSON Schema 校验
-//   - §6 的 9 个 action 业务实现（record.* / stats.monthly / recognize.image / perf.report / ...）
-//   - 所有查询强制注入 _openid（架构红线 5）
-//
-// eslint-disable-next-line @typescript-eslint/no-var-requires -- 云函数运行在 Node CJS 环境，无打包/转译步骤
+//              → H5 的用户标识为固定 demo 身份（见 logic.js 的 H5_DEMO_OWNER_ID）
+//   出参：两个入口都直接返回 { ok, data }，网关会把它当 JSON body 透传（状态码固定 200）
+//   CORS：网关自动处理（回显 Origin、OPTIONS 预检返回 204），函数侧不参与
+
+/* eslint-disable @typescript-eslint/no-var-requires -- 云函数 CJS 环境，无打包步骤 */
 const cloud = require('wx-server-sdk');
+const logic = require('./logic');
+const { createLedgerHandlers, ok, fail } = logic;
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
 
-const ok = (data) => ({ ok: true, data });
-const fail = (code, extra) => ({ ok: false, error: { code, ...extra } });
-
-// H5 端是「单用户 demo」身份：HTTP 入口拿不到微信身份，全部 H5 请求归到这一个固定归属下，
-// 不做用户隔离。见 ARCHITECTURE.md §1.2 决策 4。
-// ⚠️ 这是演示取舍，不是安全设计：任何人打开 H5 都会看到同一份数据。
-const H5_DEMO_OWNER_ID = 'h5-demo-single-user';
+const db = cloud.database();
+const { ERR } = createLedgerHandlers({ db });
 
 /**
  * 把两个入口的 event 归一化成 { source, action, payload }。
@@ -39,27 +31,17 @@ const H5_DEMO_OWNER_ID = 'h5-demo-single-user';
 function normalize(event) {
   if (event && typeof event.httpMethod === 'string') {
     const body = typeof event.body === 'string' ? event.body : '';
-    return {
-      source: 'http',
-      action: String(event.path || '').replace(/^\/+/, ''),
-      payload: body ? JSON.parse(body) : {},
-    };
+    let payload = {};
+    if (body) {
+      try {
+        payload = JSON.parse(body);
+      } catch (err) {
+        throw new Error('BODY_NOT_JSON');
+      }
+    }
+    return { source: 'http', action: String(event.path || '').replace(/^\/+/, ''), payload };
   }
-  return {
-    source: 'mp',
-    action: event && event.action,
-    payload: (event && event.payload) || {},
-  };
-}
-
-/**
- * 解析归属身份。后续所有读写都必须以 ownerId 作为归属条件（架构红线 5）：
- * 写入时显式落 `_openid: ownerId`，查询时强制过滤 `_openid: ownerId`。
- *
- * 注意：云函数以 admin 身份运行，不会自动注入 `_openid`，必须显式写入。
- */
-function resolveOwnerId(source, openid) {
-  return source === 'mp' ? openid : H5_DEMO_OWNER_ID;
+  return { source: 'mp', action: event && event.action, payload: (event && event.payload) || {} };
 }
 
 exports.main = async (event) => {
@@ -69,13 +51,37 @@ exports.main = async (event) => {
   try {
     req = normalize(event);
   } catch (err) {
-    return fail('INVALID_PARAM', { message: 'payload 不是合法 JSON' });
+    return fail(ERR.INVALID_PARAM, { message: 'payload 不是合法 JSON' });
   }
 
-  switch (req.action) {
-    case 'ping':
-      return ok({ source: req.source, ownerId: resolveOwnerId(req.source, OPENID), payload: req.payload });
-    default:
-      return fail('UNKNOWN_ACTION', { action: req.action });
+  // ping 是链路自检 action，不经过业务校验
+  if (req.action === 'ping') {
+    const ownerId = req.source === 'mp' ? OPENID : logic.H5_DEMO_OWNER_ID;
+    return ok({ source: req.source, ownerId, payload: req.payload });
+  }
+
+  const ownerId = req.source === 'mp' ? OPENID : logic.H5_DEMO_OWNER_ID;
+  if (!ownerId) {
+    return fail(ERR.INVALID_PARAM, { message: '无法解析归属身份' });
+  }
+
+  const handlers = createLedgerHandlers({ db });
+
+  const v = handlers.validate(req.action, req.payload);
+  if (v) return fail(v.code, { message: v.message });
+
+  try {
+    switch (req.action) {
+      case 'record.upsert':
+        return await handlers.handleUpsert(req.payload, ownerId);
+      case 'record.list':
+        return await handlers.handleList(req.payload, ownerId);
+      case 'record.remove':
+        return await handlers.handleRemove(req.payload, ownerId);
+      default:
+        return fail(ERR.UNKNOWN_ACTION, { action: req.action });
+    }
+  } catch (err) {
+    return fail(ERR.DB_ERROR, { message: err.message || '数据库操作失败' });
   }
 };
