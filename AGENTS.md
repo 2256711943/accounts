@@ -112,16 +112,19 @@
 
 - `npm run type-check`（`vue-tsc --noEmit`）
 - `npm run lint`（eslint + stylelint）
+- 改动云函数逻辑或 `src/` 代码后：跑一遍 `npm test`（vitest 用例不回归）
 - 双端各起一次确认不白屏：`npm run dev:mp-weixin` / `npm run dev:h5`
 - 新增组件必须附带 `__tests__/{name}.spec.ts`
 - 新增或改动云函数 action，必须同步 `src/types/api.ts` 的入出参类型
 - 改动样式 / 动效后，过一遍 H5 的 `prefers-reduced-motion`
 - 每日收尾：Git 提交 + 写一行「今天能写进简历的句子」（写不出来说明当天在做无价值的活）
+- 每次改完代码、有任务完成时：追加更新 `.agents/spec/spec_finish.md`（记录本轮完成清单、验证证据、当前 Git 状态；只追加，不改历史）
 
 ---
 
 ## Context Routing
 
+- **记录每轮进展 / 查历史完成情况** → 读 `.agents/spec/spec_finish.md`（只追加、不改历史，更新规则见「修改后必须执行」）
 - **改视觉 / 组件规格前** → 先读 `docs/UI_SPEC.md`（§2 Tokens、§2.7 变量命名约定、§4 组件清单）
 - **做架构决策、动分层 / 适配层 / 分包前** → 先读 `docs/ARCHITECTURE.md`
   （§1.2 关键决策与被否方案、§3.5 组件库主题桥接、§4 关键子系统设计）
