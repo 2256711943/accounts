@@ -1,0 +1,49 @@
+/**
+ * 组件库主题桥接 —— Design Token → wot-design-uni 的 `--wot-*` CSS 变量。
+ *
+ * 机制（ARCHITECTURE.md §3.5）：Wot 的组件级变量全部从基础变量派生，
+ * 覆盖基础变量即可让绝大多数组件自动贴合设计稿。
+ *
+ * 硬约束：
+ * - 选择器必须写 `:root, page`，只写一个会单端失效（H5 挂 :root、MP 挂 page）。
+ * - 值全部引用 tokens.scss 的 SCSS 变量，**禁止字面量**。
+ * - `--wot-color-white` / `--wot-color-black` 禁改（参与组件内部 mix() 混色）。
+ * - 只映射实际引入的组件，避免无谓的 override 债（对照 1.14.0 源码逐条核实）。
+ */
+@import './tokens';
+
+:root,
+page {
+  /* ── 一级映射：基础变量（绝大多数组件自动派生） ── */
+  --wot-color-theme: #{$color-accent};
+  --wot-color-success: #{$color-success};
+  --wot-color-warning: #{$color-warning};
+  --wot-color-danger: #{$color-danger};
+  --wot-color-info: #{$color-info};
+  --wot-color-title: #{$color-text-primary};
+  --wot-color-content: #{$color-text-primary};
+  --wot-color-secondary: #{$color-text-secondary};
+  --wot-color-aid: #{$color-text-secondary};
+  --wot-color-tip: #{$color-text-tertiary};
+  --wot-color-border: #{$color-line-strong};
+  --wot-color-border-light: #{$color-line};
+  --wot-color-bg: #{$color-bg-subtle};
+  --wot-overlay-bg: #{$color-bg-mask};
+  --wot-fs-big: #{$fs-h1};
+  --wot-fs-title: #{$fs-h2};
+  --wot-fs-content: #{$fs-body};
+  --wot-fs-secondary: #{$fs-caption};
+  --wot-fs-aid: #{$fs-tiny};
+  --wot-size-side-padding: #{$sp-4};
+  --wot-size-side-padding-small: #{$sp-1};
+
+  /* ── 二级映射：已引入组件的硬编码 rgba 项 ── */
+
+  /* wd-toast */
+  --wot-toast-radius: #{$r-md};
+  --wot-toast-fs: #{$fs-body};
+
+  /* wd-message-box */
+  --wot-message-box-title-color: #{$color-text-primary};
+  --wot-message-box-content-color: #{$color-text-secondary};
+}

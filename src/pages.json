@@ -1,11 +1,14 @@
 {
 	// easycom：wot-design-uni 的唯一引入方式（AGENTS.md 组件引入红线）。
 	// 只有模板里真实出现过的 wd-* 才会进包，这是主包体积预算的前提。
+	// Sg 系列为自研原子组件：`<SgButton>` → `src/components/Button/index.vue`。
+	// 业务组件（biz/Feedback.vue 等）一律手动 import 引用，不进 easycom。
 	// ⚠️ 改这里不会触发重编译，改完要顺手改动一个页面文件。
 	"easycom": {
 		"autoscan": true,
 		"custom": {
-			"^wd-(.*)": "wot-design-uni/components/wd-$1/wd-$1.vue"
+			"^wd-(.*)": "wot-design-uni/components/wd-$1/wd-$1.vue",
+			"^Sg(.*)$": "@/components/$1/index.vue"
 		}
 	},
 	"pages": [
@@ -17,6 +20,13 @@
 				"navigationBarTitleText": "一拍记",
 				"enablePullDownRefresh": true,
 				"backgroundTextStyle": "dark"
+			}
+		},
+		// 开发验收页：7 个自研原子组件 + Feedback 宿主的双端截图用（D3 交付物）
+		{
+			"path": "pages/dev/components",
+			"style": {
+				"navigationBarTitleText": "组件验收"
 			}
 		}
 	],

@@ -1,0 +1,78 @@
+/**
+ * 通用样式 mixins（1px 发丝线 / 多行省略 / 安全区）。
+ *
+ * 经 `uni.scss` 全局注入，组件与页面无需逐处 @import。
+ * 依赖 tokens.scss 的 SCSS 变量（uni.scss 中已按「tokens → mixins」顺序引入）。
+ */
+
+/**
+ * 1px 发丝线：2x/3x 屏用 scale 缩半，避免 1px 物理像素变粗（UI_SPEC §3.4）。
+ * @param $position top / bottom / left / right
+ * @param $color   线色，默认取 $color-line
+ */
+@mixin hairline($position: bottom, $color: $color-line) {
+  position: relative;
+
+  &::after {
+    content: '';
+    position: absolute;
+    background-color: $color;
+    pointer-events: none;
+
+    @if $position == top {
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      transform: scaleY(0.5);
+      transform-origin: 0 0;
+    } @else if $position == left {
+      top: 0;
+      bottom: 0;
+      left: 0;
+      width: 1px;
+      transform: scaleX(0.5);
+      transform-origin: 100% 0;
+    } @else if $position == right {
+      top: 0;
+      bottom: 0;
+      right: 0;
+      width: 1px;
+      transform: scaleX(0.5);
+      transform-origin: 0 0;
+    } @else {
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 1px;
+      transform: scaleY(0.5);
+      transform-origin: 0 100%;
+    }
+  }
+}
+
+/**
+ * 多行省略（UI_SPEC §3.4 长文本溢出）。
+ * @param $lines 1 = 单行（nowrap + ellipsis），>1 = -webkit-line-clamp
+ */
+@mixin ellipsis($lines: 1) {
+  @if $lines <= 1 {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  } @else {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: $lines;
+    overflow: hidden;
+  }
+}
+
+/**
+ * 底部安全区（UI_SPEC §3.2）：FAB / 底部抽屉 / tabBar 必配。
+ * @param $prop  写哪个属性（默认 padding-bottom）
+ * @param $extra 在安全区基础上叠加的间距
+ */
+@mixin safe-area($prop: padding-bottom, $extra: 0) {
+  #{$prop}: calc(env(safe-area-inset-bottom) + #{$extra});
+}

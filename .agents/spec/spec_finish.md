@@ -305,3 +305,84 @@ D1 占位首页新增「数据通道自检」卡片 + 按钮，用于人肉验�
 本轮新增未提交：`src/adapters/system.ts`、`src/stores/`、`src/utils/`（均为待提交 untracked）；已改：`src/pages/index/index.vue`、`src/pages.json`。另有 D3 产物的历史改动（`design/tokens/tokens.json`、`src/styles/tokens.scss`、`docs/UI_SPEC.md`、`docs/ARCHITECTURE.md`、`scripts/`、`design/figma-plugin/code.js`）仍未提交。上一提交：`25e33f2`（D4）。
 
 ---
+
+## 8. 本次追加：AGENTS.md 行为约束补强（2026-09-27）
+
+本轮不写业务代码，只补工程宪法的行为约束，目的是让「任务完成 → 留痕」成为强制动作。
+
+### 8.1 改动清单
+
+| 文件 | 改动 |
+|---|---|
+| `AGENTS.md` | 「修改后必须执行」新增两条：① 改动云函数逻辑或 `src/` 代码后跑 `npm test`（D4 引入 Vitest 后该清单一直缺回归项）；② 每次改完代码、有任务完成时**追加更新 `.agents/spec/spec_finish.md`**（记录完成清单 / 验证证据 / Git 状态，只追加不改历史） |
+| `AGENTS.md` | Context Routing 新增一条：**记录每轮进展 / 查历史完成情况 → 读 `spec_finish.md`**，使其被规则索引，避免 agent 不主动读它 |
+
+### 8.2 触发原因
+
+- 原 AGENTS.md 未规定「任务完成后的留痕动作」，`spec_finish.md` 更新全靠自觉，存在与工程事实脱节的风险（见 §8.3）
+- D4 引入 Vitest 后，「修改后必须执行」清单漏了 `npm test`，云函数逻辑改动可能静默回归
+
+### 8.3 顺带纠正的历史滞后
+
+按「只追加、不改历史」原则不改 §7.7，但需说明：§7.7 记载「D3 产物仍未提交」，实际本轮核查时 D3 已提交为 `8ca33b8`（feat(design): 完成 D3 设计系统基建与 Figma 生成管线），D5 提交为 `bd14b51`（feat(home): 完成 D5 核心首页）。即上一提交已推进到 `8ca33b8`，非 §7.7 所写「上一提交：25e33f2」。
+
+### 8.4 当前 Git 状态（2026-09-27）
+
+```
+ M AGENTS.md
+?? .claude/
+?? .trae/
+```
+
+`AGENTS.md` 为本轮改动；`.claude/`、`.trae/` 为工具生成的未入库目录（沿用 §5.2 的仓库卫生待办）。`npm test` 等验证项不适用于纯文档改动，本轮未跑。
+
+---
+
+## 9. 本次追加：D3 组件层补课（2026-09-27）
+
+D5 首页曾因 `src/components/` 不存在而用「原生 view + Token」兜底（见 §7.1）。用户确认**先补 D3 组件层再开 D6**，本轮将设计系统「组件层」真正落地。
+
+### 9.1 新增文件
+
+| 文件 | 内容 |
+|---|---|
+| `src/components/presets.ts` | 7 组件的变体枚举 + 8 个归一化函数（非法值回退默认）+ `emptyPreset` 三态文案（说明现状 + 下一步动作，不写「暂无数据」） |
+| `src/components/{Button,Cell,Card,Tag,Avatar,Skeleton,Empty}/index.vue` | 7 个自研原子组件，纯 token 引用、零字面色值；Button 原生 button 重置 `::after`；Skeleton shimmer 只动 transform；Avatar 分类色走 prop（运行时数据非 token） |
+| `src/components/biz/Feedback.vue` | `wd-toast` + `wd-message-box` 唯一宿主（AGENTS.md 红线），`useToast()/useMessage()` 薄封装 + `defineExpose({ toast, message })` |
+| `src/components/__tests__/presets.spec.ts` | 归一化 + 空态文案共 45 用例（vitest include 已扩到 `src/**/__tests__/**/*.spec.ts`） |
+| `src/styles/mixins.scss` | `hairline`（四方向 0.5 缩放发丝线）/ `ellipsis`（单行/多行截断）/ `safe-area` |
+| `src/styles/wot-theme.scss` | Design Token → `--wot-*` 桥接（一级 color/fs/size + 二级 toast/message-box 色与圆角），选择器 `:root, page` |
+| `src/pages/dev/components.vue` | 组件验收页（双端截图用），同时承担 easycom 改动后的页面触发 |
+
+### 9.2 配置改动
+
+- `src/uni.scss`：末尾追加 `@import '@/styles/tokens.scss'` + `@import '@/styles/mixins.scss'`，实现 token/mixin 全局注入（见踩坑 9.4.1/9.4.2）
+- `src/App.vue`：style 追加 `@import './styles/wot-theme'`
+- `src/pages.json`：easycom 加 `"^Sg(.*)$": "@/components/$1/index.vue"`（7 个原子组件），注册 dev 验收页；biz 组件不进 easycom、手动 import
+- `vitest.config.ts`：include 扩到 `src/**/__tests__/**/*.spec.ts`
+
+### 9.3 验证证据（2026-09-27 实测）
+
+- `npm run type-check`：通过（vue-tsc strict，含 dev 页与 7 组件）
+- `npm run lint`：eslint + stylelint 全过（5 处 stylelint 用 `--fix` 自动修复）
+- `npm test`：**63/63 通过**（新增 presets 45 + 云函数 18 不回归）
+- `npm run build:mp-weixin`：构建成功；主包 101 文件合计 **220,918 B ≈ 220.9 KB**（vendor.js 87 KB 最大，远低于 2 MB 预算）
+- `npm run build:h5`：构建成功
+
+### 9.4 踩坑记录
+
+1. **uni.scss 全局注入的相对路径失效**：`@import './styles/tokens'` 被 uni-app 注入到组件样式块后再解析，相对路径相对**组件文件**而非 uni.scss → `Can't find stylesheet`。
+2. **别名不带扩展名也不行**：改 `@/styles/tokens` 后 uni 的 sass resolver 走 Node require，`src/styles/tokens`（无 `.scss`）→ `MODULE_NOT_FOUND`；必须 `@import '@/styles/tokens.scss'`（带扩展名）。
+3. **wot-design-uni 整包 import 会拉进 vue-tsc 检查**：`import { useToast } from 'wot-design-uni'` 触发包入口 `export *`，把 wd-notify 的 noUnusedLocals 错误拖进来。改为**子路径 import**（`wot-design-uni/components/wd-toast` / `wd-message-box`）绕开。
+4. **vitest.config.ts 块注释里的通配符**：注释写 `cloudfunctions/**（...）` 时 `**/` 词法闭合外层块注释，`__tests__` 变成裸代码 → `ReferenceError: __tests__ is not defined`；改写注释避开斜杠星序列。
+5. **easycom 规则歧义**：先写了 `^Sg(.*)` 与 `^SgFeedback$` 两条，`SgFeedback` 会先命中前者指向不存在的 `Feedback/index.vue`；改为业务组件一律手动 import，easycom 只留原子组件一条。
+
+### 9.5 当前 Git 状态
+
+本轮改动：新增 `src/components/`（7 组件 + presets + Feedback + 单测 + dev 页）、`src/styles/mixins.scss`、`src/styles/wot-theme.scss`；修改 `src/uni.scss`、`src/App.vue`、`src/pages.json`、`vitest.config.ts`。上一提交：`8ca33b8`（D3 设计系统基建）。
+
+### 9.6 可写进简历的一句话
+
+> 自研 7 个原子组件 + Design Token 全量消费：变体归一化抽成可单测纯函数（45 用例），Wot 组件库经 `--wot-*` 变量桥接统一视觉，主包增量约 60 KB。
+
+

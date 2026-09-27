@@ -74,3 +74,18 @@ $uni-color-subtitle: #555; // 二级标题颜色
 $uni-font-size-subtitle: 18px;
 $uni-color-paragraph: #3f536e; // 文章段落颜色
 $uni-font-size-paragraph: 15px;
+
+/* ─────────────────────────────────────────────────────────────────────────────
+ * 一拍记 Design Tokens 全局注入（AGENTS.md 样式红线）
+ *
+ * uni.scss 会被 uni-app 注入到每个编译的 SCSS 里，因此在最底部追加：
+ * - tokens.scss：全部 $ 变量 + sg-token() 函数（顶层零 CSS 输出，可安全重复 import）
+ * - mixins.scss：hairline / ellipsis / safe-area 等通用 mixin
+ * 这样任何组件/页面 style 都能直接引用 token 变量与 mixin，无需逐文件 import。
+ *
+ * ⚠️ 必须用 `@/` 别名且**带 .scss 扩展名**：uni-app 把 uni.scss 内容注入到组件样式块
+ * 后再解析，相对路径会相对组件文件解析而失败；别名解析走 Node require，不带扩展名
+ * 也找不到（实测两坑：`./styles/tokens` → Can't find stylesheet；`@/styles/tokens` → MODULE_NOT_FOUND）。
+ * ───────────────────────────────────────────────────────────────────────────── */
+@import '@/styles/tokens.scss';
+@import '@/styles/mixins.scss';
