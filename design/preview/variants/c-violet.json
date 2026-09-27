@@ -1,0 +1,45 @@
+{
+  "name": "方案 C · 亮白现代感（紫罗兰 + 大圆角）",
+  "note": "近白底 + 紫罗兰主色，圆角最大、投影最重且带色，字阶落差最大。最年轻、最「产品感」，一眼看上去最不像学生作业。代价：紫蓝系正是 UI_SPEC §1.2 专门避开的 AI 生成设计重灾区，撞脸风险最高。",
+  "tokens": {
+    "color-bg-base": "#FAFAFC",
+    "color-bg-surface": "#FFFFFF",
+    "color-bg-subtle": "#F0F0F5",
+    "color-bg-mask": "rgba(24,16,56,0.46)",
+
+    "color-line": "rgba(24,16,56,0.07)",
+    "color-line-strong": "rgba(24,16,56,0.14)",
+
+    "color-text-primary": "#17141F",
+    "color-text-secondary": "#5E5A6E",
+    "color-text-tertiary": "#9793A3",
+    "color-text-inverse": "#FFFFFF",
+
+    "color-accent": "#6C4BFF",
+    "color-accent-pressed": "#5433DB",
+    "color-accent-soft": "#EEE9FF",
+
+    "color-success": "#12A594",
+    "color-warning": "#F0A32B",
+    "color-danger": "#E0464B",
+    "color-info": "#6C7B99",
+
+    "color-chart-c1": "#6C4BFF",
+    "color-chart-c2": "#12A594",
+    "color-chart-c3": "#F0A32B",
+    "color-chart-c4": "#FF6B9A",
+    "color-chart-c5": "#7C8AA5",
+
+    "fs-display": "40px",
+    "fs-h1": "25px",
+    "fs-h2": "18px",
+
+    "r-sm": "10px",
+    "r-md": "16px",
+    "r-lg": "22px",
+    "r-xl": "28px",
+
+    "sh-1": "0 1px 2px rgba(30,20,70,0.06), 0 2px 8px rgba(30,20,70,0.05)",
+    "sh-2": "0 12px 30px rgba(70,45,160,0.16)"
+  }
+}

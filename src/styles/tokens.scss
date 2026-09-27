@@ -4,8 +4,8 @@
 // 单一来源：design/tokens/tokens.json
 // 重新生成：npm run gen:scss　（校验是否同步：npm run gen:tokens:check）
 //
-// 源版本：1.1.0　导出日期：2026-09-22
-// 来源说明：Figma Variables (01 Foundations)
+// 源版本：1.2.0　导出日期：2026-09-26
+// 来源说明：视觉方向 C（亮白现代感 · 紫罗兰）定稿；Figma Variables 需按本文件回写
 //
 // 本文件顶层零 CSS 输出，import 任意次都不会产生重复样式。
 // CSS 自定义属性形态由文件末尾的 `sg-css-vars` mixin 提供，
@@ -19,54 +19,54 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 /* color */
-// 页面底色（暖白）
-$color-bg-base: #FAF9F5;
+// 页面底色（近白微冷；刻意不用纯白，让纯白卡片有边界）
+$color-bg-base: #FAFAFC;
 // 卡片、列表项
 $color-bg-surface: #FFFFFF;
 // 次级块、标签底、骨架屏底
-$color-bg-subtle: #F2F0E9;
+$color-bg-subtle: #F0F0F5;
 // 弹层遮罩
-$color-bg-mask: rgba(44,44,42,0.45);
+$color-bg-mask: rgba(24,16,56,0.46);
 // 必要分割线，尽量少用
-$color-line: rgba(44,44,42,0.08);
+$color-line: rgba(24,16,56,0.07);
 // 输入框边框、需强调的分隔
-$color-line-strong: rgba(44,44,42,0.16);
+$color-line-strong: rgba(24,16,56,0.14);
 // 主文案、支出金额
-$color-text-primary: #2C2C2A;
+$color-text-primary: #17141F;
 // 辅助说明、时间、分类名
-$color-text-secondary: #6B6A64;
+$color-text-secondary: #5E5A6E;
 // 占位符、禁用态
-$color-text-tertiary: #9C9A92;
+$color-text-tertiary: #9793A3;
 // 深底上的文字
 $color-text-inverse: #FFFFFF;
 // 唯一强调色：主按钮、FAB、选中态
-$color-accent: #E8663D;
+$color-accent: #6C4BFF;
 // 按压态
-$color-accent-pressed: #C9502C;
+$color-accent-pressed: #5433DB;
 // 强调色浅底（选中标签）
-$color-accent-soft: #FBEDE7;
+$color-accent-soft: #EEE9FF;
 // 收入金额、同步成功
-$color-success: #2F8F7A;
+$color-success: #12A594;
 // 待同步、识别降级
-$color-warning: #D9952B;
+$color-warning: #F0A32B;
 // 删除、同步失败
-$color-danger: #C4453C;
+$color-danger: #E0464B;
 // 中性提示（雾蓝）
-$color-info: #5B7A8C;
-$color-chart-c1: #E8663D;
-$color-chart-c2: #D9952B;
-$color-chart-c3: #2F8F7A;
-$color-chart-c4: #B4566E;
-$color-chart-c5: #5B7A8C;
+$color-info: #6C7B99;
+$color-chart-c1: #6C4BFF;
+$color-chart-c2: #12A594;
+$color-chart-c3: #F0A32B;
+$color-chart-c4: #FF6B9A;
+$color-chart-c5: #7C8AA5;
 
 /* font */
 $font-family-sans: -apple-system, "PingFang SC", "HarmonyOS Sans SC", "Noto Sans SC", "Microsoft YaHei", sans-serif;
-// 68rpx 首页本月总支出
-$fs-display: 34px;
-// 44rpx 页面大标题
-$fs-h1: 22px;
-// 34rpx 区块标题
-$fs-h2: 17px;
+// 80rpx 首页本月总支出
+$fs-display: 40px;
+// 50rpx 页面大标题
+$fs-h1: 25px;
+// 36rpx 区块标题
+$fs-h2: 18px;
 // 30rpx 列表主文案
 $fs-body: 15px;
 // 26rpx 辅助说明
@@ -99,22 +99,22 @@ $sp-6: 24px;
 $sp-8: 32px;
 
 /* radius */
-// 16rpx 标签、角标
-$r-sm: 8px;
-// 24rpx 输入框、小卡片
-$r-md: 12px;
-// 32rpx 主卡片、FAB
-$r-lg: 16px;
-// 40rpx 底部抽屉顶部
-$r-xl: 20px;
+// 20rpx 标签、角标
+$r-sm: 10px;
+// 32rpx 输入框、小卡片
+$r-md: 16px;
+// 44rpx 主卡片、FAB
+$r-lg: 22px;
+// 56rpx 底部抽屉顶部
+$r-xl: 28px;
 // 药丸按钮、头像
 $r-full: 999px;
 
 /* shadow */
-// 列表卡片
-$sh-1: 0 1px 2px rgba(44,44,42,0.04);
-// 悬浮 FAB、底部抽屉
-$sh-2: 0 4px 16px rgba(44,44,42,0.06);
+// 列表卡片（两层叠加，比单层更贴合）
+$sh-1: 0 1px 2px rgba(30,20,70,0.06), 0 2px 8px rgba(30,20,70,0.05);
+// 悬浮 FAB、底部抽屉（带主色倾向）
+$sh-2: 0 12px 30px rgba(70,45,160,0.16);
 
 /* motion */
 // 按压反馈、标签切换
@@ -150,32 +150,32 @@ $layout-cell-min-height: 44px;
 // 扁平查询表 + 取用函数（sg-token("color-accent")）
 // ─────────────────────────────────────────────────────────────────────────────
 $sg-tokens: (
-  "color-bg-base": #FAF9F5,
+  "color-bg-base": #FAFAFC,
   "color-bg-surface": #FFFFFF,
-  "color-bg-subtle": #F2F0E9,
-  "color-bg-mask": rgba(44,44,42,0.45),
-  "color-line": rgba(44,44,42,0.08),
-  "color-line-strong": rgba(44,44,42,0.16),
-  "color-text-primary": #2C2C2A,
-  "color-text-secondary": #6B6A64,
-  "color-text-tertiary": #9C9A92,
+  "color-bg-subtle": #F0F0F5,
+  "color-bg-mask": rgba(24,16,56,0.46),
+  "color-line": rgba(24,16,56,0.07),
+  "color-line-strong": rgba(24,16,56,0.14),
+  "color-text-primary": #17141F,
+  "color-text-secondary": #5E5A6E,
+  "color-text-tertiary": #9793A3,
   "color-text-inverse": #FFFFFF,
-  "color-accent": #E8663D,
-  "color-accent-pressed": #C9502C,
-  "color-accent-soft": #FBEDE7,
-  "color-success": #2F8F7A,
-  "color-warning": #D9952B,
-  "color-danger": #C4453C,
-  "color-info": #5B7A8C,
-  "color-chart-c1": #E8663D,
-  "color-chart-c2": #D9952B,
-  "color-chart-c3": #2F8F7A,
-  "color-chart-c4": #B4566E,
-  "color-chart-c5": #5B7A8C,
+  "color-accent": #6C4BFF,
+  "color-accent-pressed": #5433DB,
+  "color-accent-soft": #EEE9FF,
+  "color-success": #12A594,
+  "color-warning": #F0A32B,
+  "color-danger": #E0464B,
+  "color-info": #6C7B99,
+  "color-chart-c1": #6C4BFF,
+  "color-chart-c2": #12A594,
+  "color-chart-c3": #F0A32B,
+  "color-chart-c4": #FF6B9A,
+  "color-chart-c5": #7C8AA5,
   "font-family-sans": (-apple-system, "PingFang SC", "HarmonyOS Sans SC", "Noto Sans SC", "Microsoft YaHei", sans-serif),
-  "fs-display": 34px,
-  "fs-h1": 22px,
-  "fs-h2": 17px,
+  "fs-display": 40px,
+  "fs-h1": 25px,
+  "fs-h2": 18px,
   "fs-body": 15px,
   "fs-caption": 13px,
   "fs-tiny": 11px,
@@ -193,13 +193,13 @@ $sg-tokens: (
   "sp-5": 20px,
   "sp-6": 24px,
   "sp-8": 32px,
-  "r-sm": 8px,
-  "r-md": 12px,
-  "r-lg": 16px,
-  "r-xl": 20px,
+  "r-sm": 10px,
+  "r-md": 16px,
+  "r-lg": 22px,
+  "r-xl": 28px,
   "r-full": 999px,
-  "sh-1": 0 1px 2px rgba(44,44,42,0.04),
-  "sh-2": 0 4px 16px rgba(44,44,42,0.06),
+  "sh-1": (0 1px 2px rgba(30,20,70,0.06), 0 2px 8px rgba(30,20,70,0.05)),
+  "sh-2": 0 12px 30px rgba(70,45,160,0.16),
   "dur-fast": 120ms,
   "dur-base": 200ms,
   "dur-slow": 320ms,
@@ -233,32 +233,32 @@ $sg-tokens: (
 @mixin sg-css-vars {
   :root,
   page {
-    --color-bg-base: #FAF9F5;
+    --color-bg-base: #FAFAFC;
     --color-bg-surface: #FFFFFF;
-    --color-bg-subtle: #F2F0E9;
-    --color-bg-mask: rgba(44,44,42,0.45);
-    --color-line: rgba(44,44,42,0.08);
-    --color-line-strong: rgba(44,44,42,0.16);
-    --color-text-primary: #2C2C2A;
-    --color-text-secondary: #6B6A64;
-    --color-text-tertiary: #9C9A92;
+    --color-bg-subtle: #F0F0F5;
+    --color-bg-mask: rgba(24,16,56,0.46);
+    --color-line: rgba(24,16,56,0.07);
+    --color-line-strong: rgba(24,16,56,0.14);
+    --color-text-primary: #17141F;
+    --color-text-secondary: #5E5A6E;
+    --color-text-tertiary: #9793A3;
     --color-text-inverse: #FFFFFF;
-    --color-accent: #E8663D;
-    --color-accent-pressed: #C9502C;
-    --color-accent-soft: #FBEDE7;
-    --color-success: #2F8F7A;
-    --color-warning: #D9952B;
-    --color-danger: #C4453C;
-    --color-info: #5B7A8C;
-    --color-chart-c1: #E8663D;
-    --color-chart-c2: #D9952B;
-    --color-chart-c3: #2F8F7A;
-    --color-chart-c4: #B4566E;
-    --color-chart-c5: #5B7A8C;
+    --color-accent: #6C4BFF;
+    --color-accent-pressed: #5433DB;
+    --color-accent-soft: #EEE9FF;
+    --color-success: #12A594;
+    --color-warning: #F0A32B;
+    --color-danger: #E0464B;
+    --color-info: #6C7B99;
+    --color-chart-c1: #6C4BFF;
+    --color-chart-c2: #12A594;
+    --color-chart-c3: #F0A32B;
+    --color-chart-c4: #FF6B9A;
+    --color-chart-c5: #7C8AA5;
     --font-family-sans: -apple-system, "PingFang SC", "HarmonyOS Sans SC", "Noto Sans SC", "Microsoft YaHei", sans-serif;
-    --fs-display: 34px;
-    --fs-h1: 22px;
-    --fs-h2: 17px;
+    --fs-display: 40px;
+    --fs-h1: 25px;
+    --fs-h2: 18px;
     --fs-body: 15px;
     --fs-caption: 13px;
     --fs-tiny: 11px;
@@ -276,13 +276,13 @@ $sg-tokens: (
     --sp-5: 20px;
     --sp-6: 24px;
     --sp-8: 32px;
-    --r-sm: 8px;
-    --r-md: 12px;
-    --r-lg: 16px;
-    --r-xl: 20px;
+    --r-sm: 10px;
+    --r-md: 16px;
+    --r-lg: 22px;
+    --r-xl: 28px;
     --r-full: 999px;
-    --sh-1: 0 1px 2px rgba(44,44,42,0.04);
-    --sh-2: 0 4px 16px rgba(44,44,42,0.06);
+    --sh-1: 0 1px 2px rgba(30,20,70,0.06), 0 2px 8px rgba(30,20,70,0.05);
+    --sh-2: 0 12px 30px rgba(70,45,160,0.16);
     --dur-fast: 120ms;
     --dur-base: 200ms;
     --dur-slow: 320ms;

@@ -10,8 +10,8 @@
  *    src/styles/tokens.scss      （产物，禁止手改！）
  *
  * 产物同时提供「两份形态」（UI_SPEC §2 单一来源原则）：
- *   1. SCSS 变量       $color-accent: #E8663D;   ← 供计算 / 组件库主题映射使用
- *   2. CSS 自定义属性   --color-accent: #E8663D;  ← 供组件样式引用
+ *   1. SCSS 变量       $color-accent: #6C4BFF;   ← 供计算 / 组件库主题映射使用
+ *   2. CSS 自定义属性   --color-accent: #6C4BFF;  ← 供组件样式引用
  *
  * 为什么 CSS 自定义属性放在 `@mixin sg-css-vars` 里而不是顶层直出？
  *   tokens.scss 会被多个 .vue 文件 import（为了拿 SCSS 变量）。若把 `:root,page{…}`

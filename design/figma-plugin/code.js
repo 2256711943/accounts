@@ -36,42 +36,42 @@
 // >>> TOKENS:BEGIN
 // ⚠️ 本区块由 `npm run gen:figma` 从 design/tokens/tokens.json 自动注入，请勿手改！
 //    手改会在下次生成时被覆盖；要改数据请改 tokens.json。
-//    源版本：1.1.0　导出日期：2026-09-22
+//    源版本：1.2.0　导出日期：2026-09-26
 
 const TOKENS_META = {
   name: "SnapLedger Design Tokens",
-  version: "1.1.0",
-  updatedAt: "2026-09-22",
-  source: "Figma Variables (01 Foundations)",
+  version: "1.2.0",
+  updatedAt: "2026-09-26",
+  source: "视觉方向 C（亮白现代感 · 紫罗兰）定稿；Figma Variables 需按本文件回写",
 };
 
 const TOKENS = [
-  { path: "color.bg.base", figmaName: "color/bg/base", name: "color-bg-base", value: "#FAF9F5", type: "color", description: "页面底色（暖白）" },
+  { path: "color.bg.base", figmaName: "color/bg/base", name: "color-bg-base", value: "#FAFAFC", type: "color", description: "页面底色（近白微冷；刻意不用纯白，让纯白卡片有边界）" },
   { path: "color.bg.surface", figmaName: "color/bg/surface", name: "color-bg-surface", value: "#FFFFFF", type: "color", description: "卡片、列表项" },
-  { path: "color.bg.subtle", figmaName: "color/bg/subtle", name: "color-bg-subtle", value: "#F2F0E9", type: "color", description: "次级块、标签底、骨架屏底" },
-  { path: "color.bg.mask", figmaName: "color/bg/mask", name: "color-bg-mask", value: "rgba(44,44,42,0.45)", type: "color", description: "弹层遮罩" },
-  { path: "color.line.default", figmaName: "color/line", name: "color-line", value: "rgba(44,44,42,0.08)", type: "color", description: "必要分割线，尽量少用" },
-  { path: "color.line.strong", figmaName: "color/line/strong", name: "color-line-strong", value: "rgba(44,44,42,0.16)", type: "color", description: "输入框边框、需强调的分隔" },
-  { path: "color.text.primary", figmaName: "color/text/primary", name: "color-text-primary", value: "#2C2C2A", type: "color", description: "主文案、支出金额" },
-  { path: "color.text.secondary", figmaName: "color/text/secondary", name: "color-text-secondary", value: "#6B6A64", type: "color", description: "辅助说明、时间、分类名" },
-  { path: "color.text.tertiary", figmaName: "color/text/tertiary", name: "color-text-tertiary", value: "#9C9A92", type: "color", description: "占位符、禁用态" },
+  { path: "color.bg.subtle", figmaName: "color/bg/subtle", name: "color-bg-subtle", value: "#F0F0F5", type: "color", description: "次级块、标签底、骨架屏底" },
+  { path: "color.bg.mask", figmaName: "color/bg/mask", name: "color-bg-mask", value: "rgba(24,16,56,0.46)", type: "color", description: "弹层遮罩" },
+  { path: "color.line.default", figmaName: "color/line", name: "color-line", value: "rgba(24,16,56,0.07)", type: "color", description: "必要分割线，尽量少用" },
+  { path: "color.line.strong", figmaName: "color/line/strong", name: "color-line-strong", value: "rgba(24,16,56,0.14)", type: "color", description: "输入框边框、需强调的分隔" },
+  { path: "color.text.primary", figmaName: "color/text/primary", name: "color-text-primary", value: "#17141F", type: "color", description: "主文案、支出金额" },
+  { path: "color.text.secondary", figmaName: "color/text/secondary", name: "color-text-secondary", value: "#5E5A6E", type: "color", description: "辅助说明、时间、分类名" },
+  { path: "color.text.tertiary", figmaName: "color/text/tertiary", name: "color-text-tertiary", value: "#9793A3", type: "color", description: "占位符、禁用态" },
   { path: "color.text.inverse", figmaName: "color/text/inverse", name: "color-text-inverse", value: "#FFFFFF", type: "color", description: "深底上的文字" },
-  { path: "color.accent.default", figmaName: "color/accent", name: "color-accent", value: "#E8663D", type: "color", description: "唯一强调色：主按钮、FAB、选中态" },
-  { path: "color.accent.pressed", figmaName: "color/accent/pressed", name: "color-accent-pressed", value: "#C9502C", type: "color", description: "按压态" },
-  { path: "color.accent.soft", figmaName: "color/accent/soft", name: "color-accent-soft", value: "#FBEDE7", type: "color", description: "强调色浅底（选中标签）" },
-  { path: "color.semantic.success", figmaName: "color/success", name: "color-success", value: "#2F8F7A", type: "color", description: "收入金额、同步成功" },
-  { path: "color.semantic.warning", figmaName: "color/warning", name: "color-warning", value: "#D9952B", type: "color", description: "待同步、识别降级" },
-  { path: "color.semantic.danger", figmaName: "color/danger", name: "color-danger", value: "#C4453C", type: "color", description: "删除、同步失败" },
-  { path: "color.semantic.info", figmaName: "color/info", name: "color-info", value: "#5B7A8C", type: "color", description: "中性提示（雾蓝）" },
-  { path: "color.chart.c1", figmaName: "color/chart/c1", name: "color-chart-c1", value: "#E8663D", type: "color" },
-  { path: "color.chart.c2", figmaName: "color/chart/c2", name: "color-chart-c2", value: "#D9952B", type: "color" },
-  { path: "color.chart.c3", figmaName: "color/chart/c3", name: "color-chart-c3", value: "#2F8F7A", type: "color" },
-  { path: "color.chart.c4", figmaName: "color/chart/c4", name: "color-chart-c4", value: "#B4566E", type: "color" },
-  { path: "color.chart.c5", figmaName: "color/chart/c5", name: "color-chart-c5", value: "#5B7A8C", type: "color" },
+  { path: "color.accent.default", figmaName: "color/accent", name: "color-accent", value: "#6C4BFF", type: "color", description: "唯一强调色：主按钮、FAB、选中态" },
+  { path: "color.accent.pressed", figmaName: "color/accent/pressed", name: "color-accent-pressed", value: "#5433DB", type: "color", description: "按压态" },
+  { path: "color.accent.soft", figmaName: "color/accent/soft", name: "color-accent-soft", value: "#EEE9FF", type: "color", description: "强调色浅底（选中标签）" },
+  { path: "color.semantic.success", figmaName: "color/success", name: "color-success", value: "#12A594", type: "color", description: "收入金额、同步成功" },
+  { path: "color.semantic.warning", figmaName: "color/warning", name: "color-warning", value: "#F0A32B", type: "color", description: "待同步、识别降级" },
+  { path: "color.semantic.danger", figmaName: "color/danger", name: "color-danger", value: "#E0464B", type: "color", description: "删除、同步失败" },
+  { path: "color.semantic.info", figmaName: "color/info", name: "color-info", value: "#6C7B99", type: "color", description: "中性提示（雾蓝）" },
+  { path: "color.chart.c1", figmaName: "color/chart/c1", name: "color-chart-c1", value: "#6C4BFF", type: "color" },
+  { path: "color.chart.c2", figmaName: "color/chart/c2", name: "color-chart-c2", value: "#12A594", type: "color" },
+  { path: "color.chart.c3", figmaName: "color/chart/c3", name: "color-chart-c3", value: "#F0A32B", type: "color" },
+  { path: "color.chart.c4", figmaName: "color/chart/c4", name: "color-chart-c4", value: "#FF6B9A", type: "color" },
+  { path: "color.chart.c5", figmaName: "color/chart/c5", name: "color-chart-c5", value: "#7C8AA5", type: "color" },
   { path: "font.family.sans", figmaName: "font/family/sans", name: "font-family-sans", value: "-apple-system, \"PingFang SC\", \"HarmonyOS Sans SC\", \"Noto Sans SC\", \"Microsoft YaHei\", sans-serif", type: "fontFamily" },
-  { path: "font.size.display", figmaName: "font/size/display", name: "fs-display", value: "34px", type: "dimension", description: "68rpx 首页本月总支出" },
-  { path: "font.size.h1", figmaName: "font/size/h1", name: "fs-h1", value: "22px", type: "dimension", description: "44rpx 页面大标题" },
-  { path: "font.size.h2", figmaName: "font/size/h2", name: "fs-h2", value: "17px", type: "dimension", description: "34rpx 区块标题" },
+  { path: "font.size.display", figmaName: "font/size/display", name: "fs-display", value: "40px", type: "dimension", description: "80rpx 首页本月总支出" },
+  { path: "font.size.h1", figmaName: "font/size/h1", name: "fs-h1", value: "25px", type: "dimension", description: "50rpx 页面大标题" },
+  { path: "font.size.h2", figmaName: "font/size/h2", name: "fs-h2", value: "18px", type: "dimension", description: "36rpx 区块标题" },
   { path: "font.size.body", figmaName: "font/size/body", name: "fs-body", value: "15px", type: "dimension", description: "30rpx 列表主文案" },
   { path: "font.size.caption", figmaName: "font/size/caption", name: "fs-caption", value: "13px", type: "dimension", description: "26rpx 辅助说明" },
   { path: "font.size.tiny", figmaName: "font/size/tiny", name: "fs-tiny", value: "11px", type: "dimension", description: "22rpx 标签、角标" },
@@ -89,13 +89,13 @@ const TOKENS = [
   { path: "space.5", figmaName: "space/5", name: "sp-5", value: "20px", type: "dimension", description: "40rpx 区块之间" },
   { path: "space.6", figmaName: "space/6", name: "sp-6", value: "24px", type: "dimension", description: "48rpx 大区块分隔" },
   { path: "space.8", figmaName: "space/8", name: "sp-8", value: "32px", type: "dimension", description: "64rpx 页面顶部大留白" },
-  { path: "radius.sm", figmaName: "radius/sm", name: "r-sm", value: "8px", type: "dimension", description: "16rpx 标签、角标" },
-  { path: "radius.md", figmaName: "radius/md", name: "r-md", value: "12px", type: "dimension", description: "24rpx 输入框、小卡片" },
-  { path: "radius.lg", figmaName: "radius/lg", name: "r-lg", value: "16px", type: "dimension", description: "32rpx 主卡片、FAB" },
-  { path: "radius.xl", figmaName: "radius/xl", name: "r-xl", value: "20px", type: "dimension", description: "40rpx 底部抽屉顶部" },
+  { path: "radius.sm", figmaName: "radius/sm", name: "r-sm", value: "10px", type: "dimension", description: "20rpx 标签、角标" },
+  { path: "radius.md", figmaName: "radius/md", name: "r-md", value: "16px", type: "dimension", description: "32rpx 输入框、小卡片" },
+  { path: "radius.lg", figmaName: "radius/lg", name: "r-lg", value: "22px", type: "dimension", description: "44rpx 主卡片、FAB" },
+  { path: "radius.xl", figmaName: "radius/xl", name: "r-xl", value: "28px", type: "dimension", description: "56rpx 底部抽屉顶部" },
   { path: "radius.full", figmaName: "radius/full", name: "r-full", value: "999px", type: "dimension", description: "药丸按钮、头像" },
-  { path: "shadow.1", figmaName: "shadow/1", name: "sh-1", value: "0 1px 2px rgba(44,44,42,0.04)", type: "shadow", description: "列表卡片" },
-  { path: "shadow.2", figmaName: "shadow/2", name: "sh-2", value: "0 4px 16px rgba(44,44,42,0.06)", type: "shadow", description: "悬浮 FAB、底部抽屉" },
+  { path: "shadow.1", figmaName: "shadow/1", name: "sh-1", value: "0 1px 2px rgba(30,20,70,0.06), 0 2px 8px rgba(30,20,70,0.05)", type: "shadow", description: "列表卡片（两层叠加，比单层更贴合）" },
+  { path: "shadow.2", figmaName: "shadow/2", name: "sh-2", value: "0 12px 30px rgba(70,45,160,0.16)", type: "shadow", description: "悬浮 FAB、底部抽屉（带主色倾向）" },
   { path: "motion.duration.fast", figmaName: "motion/duration/fast", name: "dur-fast", value: "120ms", type: "duration", description: "按压反馈、标签切换" },
   { path: "motion.duration.base", figmaName: "motion/duration/base", name: "dur-base", value: "200ms", type: "duration", description: "列表项入场" },
   { path: "motion.duration.slow", figmaName: "motion/duration/slow", name: "dur-slow", value: "320ms", type: "duration", description: "页面转场、抽屉" },
@@ -177,7 +177,7 @@ function clamp01(n) {
   return Math.max(0, Math.min(1, n));
 }
 
-/** "#E8663D" → {r,g,b}（0..1） */
+/** "#6C4BFF" → {r,g,b}（0..1） */
 function hexToRgb(hex) {
   const h = hex.replace('#', '').trim();
   const full = h.length === 3 ? h[0] + h[0] + h[1] + h[1] + h[2] + h[2] : h;
@@ -240,23 +240,43 @@ function bindFloat(node, prop, tokenName) {
 
 /** "0 1px 2px rgba(44,44,42,0.04)" → Figma DROP_SHADOW effect
  *  两个坑：① CSS 零值可以不带单位（0 而非 0px）→ 单位用 (?:px)? 而非 px?；
- *          ② `px?` 的语义是「p + 可选 x」，会把 p 变成必填，写法是错的 */
+ *          ② `px?` 的语义是「p + 可选 x」，会把 p 变成必填，写法是错的
+ *  v1.2 起 token 允许两层叠加（"a, b"）→ 返回效果数组；
+ *  拆层时必须忽略括号内的逗号（rgba(30,20,70,0.06) 自带 3 个逗号）。 */
+const SHADOW_LAYER_RE =
+  /^(-?[\d.]+)(?:px)?\s+(-?[\d.]+)(?:px)?\s+(-?[\d.]+)(?:px)?(?:\s+(-?[\d.]+)(?:px)?)?\s+(rgba?\([^)]+\))$/;
+
 function shadowEffect(tokenName) {
   const raw = String(tk(tokenName));
-  const m = raw.match(
-    /^(-?[\d.]+)(?:px)?\s+(-?[\d.]+)(?:px)?\s+(-?[\d.]+)(?:px)?(?:\s+(-?[\d.]+)(?:px)?)?\s+(rgba?\([^)]+\))$/
-  );
-  if (!m) throw new Error('无法解析的阴影 token: ' + raw);
-  const c = parseColor(m[5]);
-  return {
-    type: 'DROP_SHADOW',
-    color: { r: c.r, g: c.g, b: c.b, a: c.a },
-    offset: { x: parseFloat(m[1]), y: parseFloat(m[2]) },
-    radius: parseFloat(m[3]),
-    spread: m[4] ? parseFloat(m[4]) : 0,
-    visible: true,
-    blendMode: 'NORMAL',
-  };
+  const layers = [];
+  let depth = 0;
+  let buf = '';
+  for (const ch of raw) {
+    if (ch === '(') depth++;
+    else if (ch === ')') depth--;
+    if (ch === ',' && depth === 0) {
+      layers.push(buf);
+      buf = '';
+    } else {
+      buf += ch;
+    }
+  }
+  layers.push(buf);
+
+  return layers.map((layer) => {
+    const m = layer.trim().match(SHADOW_LAYER_RE);
+    if (!m) throw new Error('无法解析的阴影 token: ' + raw);
+    const c = parseColor(m[5]);
+    return {
+      type: 'DROP_SHADOW',
+      color: { r: c.r, g: c.g, b: c.b, a: c.a },
+      offset: { x: parseFloat(m[1]), y: parseFloat(m[2]) },
+      radius: parseFloat(m[3]),
+      spread: m[4] ? parseFloat(m[4]) : 0,
+      visible: true,
+      blendMode: 'NORMAL',
+    };
+  });
 }
 
 /** 像素高度 → rpx 文案（1px = 2rpx，UI_SPEC §3.1） */
@@ -340,7 +360,7 @@ function frame(name, opt) {
     f.strokeWeight = opt.strokeWeight || 1;
     f.strokeAlign = 'INSIDE';
   }
-  if (opt.shadow) f.effects = [shadowEffect(opt.shadow)];
+  if (opt.shadow) f.effects = shadowEffect(opt.shadow);
   if (opt.clip) f.clipsContent = true;
 
   if (opt.dir) {
@@ -639,7 +659,7 @@ function genCover(page) {
   f.appendChild(spacer());
 
   const lines = [
-    '暖白底 + 唯一强调色（赤陶橙）：克制、可信，不做「记账工具」的刻板样子。',
+    '近白底 + 唯一强调色（紫罗兰）：克制、可信，不做「记账工具」的刻板样子。',
     '视觉型组件自研、交互型组件外采，两者由同一套 Design Token 驱动，双端零风格分裂。',
     '所有色值 / 字阶 / 间距 / 圆角 / 阴影均来自 Figma Variables，单向生成代码侧 tokens.scss。',
   ];
@@ -700,7 +720,7 @@ function genColorBlock() {
   sectionHeader(
     s,
     'Color 色彩',
-    '唯一强调色赤陶橙。色块上标注了代码变量名（--*）与原始值；色块已绑定到 Figma 变量，改变量即可全稿联动。'
+    '唯一强调色紫罗兰。色块上标注了代码变量名（--*）与原始值；色块已绑定到 Figma 变量，改变量即可全稿联动。'
   );
 
   const groups = [
@@ -846,7 +866,7 @@ function genRadiusBlock(y) {
 
 function genShadowBlock(y) {
   const s = section('Foundations/Shadow', 0, y);
-  sectionHeader(s, 'Shadow 阴影', '只有两级、都极轻。阴影用于「浮起来」的层次，不用于装饰。');
+  sectionHeader(s, 'Shadow 阴影', '只有两级，都用于「浮起来」的层次，不做装饰。sh-1 两层叠加更贴合，sh-2 带主色倾向（透明度上限 0.2）。');
 
   const stage = frame('Shadow/Stage', {
     dir: 'HORIZONTAL',
@@ -1142,7 +1162,7 @@ function buildCardVariants() {
     c.paddingTop = c.paddingBottom = tkNum('sp-4');
     c.cornerRadius = tkNum('r-lg');
     c.fills = [paintVar('color-bg-surface')];
-    if (key === 'elevated') c.effects = [shadowEffect('sh-1')];
+    if (key === 'elevated') c.effects = shadowEffect('sh-1');
 
     c.appendChild(text('前三分类', { size: tkNum('fs-h2'), medium: true }));
 
@@ -1424,7 +1444,7 @@ function genWotMockups(sectionNode) {
   sectionNode.appendChild(text('Components 外采（Wot 映射后观感）', { size: tkNum('fs-h1'), medium: true }));
   sectionNode.appendChild(
     text(
-      '以下为 wot-design-uni 1.14.0 在本项目主题映射（UI_SPEC §4.3）后的观感示意 —— 静态图，非组件。默认主色 #4D80F0 已被 --wot-color-theme 覆盖为 accent 赤陶橙。',
+      '以下为 wot-design-uni 1.14.0 在本项目主题映射（UI_SPEC §4.3）后的观感示意 —— 静态图，非组件。默认主色 #4D80F0 已被 --wot-color-theme 覆盖为 accent 紫罗兰。',
       { size: tkNum('fs-caption'), color: 'color-text-secondary', width: 920 }
     )
   );

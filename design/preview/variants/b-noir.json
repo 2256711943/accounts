@@ -1,0 +1,45 @@
+{
+  "name": "方案 B · 深色高级感（近黑 + 亮橙）",
+  "note": "近黑底 + 亮橙主色，卡片靠明度差浮起，圆角最大、投影最深。深色天然有纵深感，「素/平」的问题解决得最彻底，也最显贵。代价：白天户外可读性最差，屏幕亮度敏感的机型上偏暗；后续每个页面都要按深色重新校一遍对比度。",
+  "tokens": {
+    "color-bg-base": "#16171B",
+    "color-bg-surface": "#1F2126",
+    "color-bg-subtle": "#2A2D34",
+    "color-bg-mask": "rgba(0,0,0,0.62)",
+
+    "color-line": "rgba(255,255,255,0.08)",
+    "color-line-strong": "rgba(255,255,255,0.16)",
+
+    "color-text-primary": "#F3F4F6",
+    "color-text-secondary": "#A9AEBA",
+    "color-text-tertiary": "#6F757F",
+    "color-text-inverse": "#1A1206",
+
+    "color-accent": "#FF8A3D",
+    "color-accent-pressed": "#E8742A",
+    "color-accent-soft": "#3A2A1F",
+
+    "color-success": "#35C08A",
+    "color-warning": "#F2B441",
+    "color-danger": "#FF6A5B",
+    "color-info": "#7FA5C0",
+
+    "color-chart-c1": "#FF8A3D",
+    "color-chart-c2": "#F2B441",
+    "color-chart-c3": "#35C08A",
+    "color-chart-c4": "#E4739A",
+    "color-chart-c5": "#7FA5C0",
+
+    "fs-display": "40px",
+    "fs-h1": "25px",
+    "fs-h2": "18px",
+
+    "r-sm": "10px",
+    "r-md": "14px",
+    "r-lg": "20px",
+    "r-xl": "26px",
+
+    "sh-1": "0 1px 2px rgba(0,0,0,0.45)",
+    "sh-2": "0 12px 32px rgba(0,0,0,0.55)"
+  }
+}

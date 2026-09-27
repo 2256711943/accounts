@@ -54,7 +54,7 @@
 **代价与必须监控的三件事**：
 
 1. 主包预算被压缩 → §4.4 给出增量预算（≤150KB）与 D3 实测任务；**超预算时按上表「外采」清单从后往前砍**（先 `wd-swipe-action` / `wd-number-keyboard`）。
-2. 组件库默认是 Vant 风（主色 `#4D80F0` 蓝紫），与本项目「暖白 + 赤陶橙」不是一个气质 → **必须做主题桥接**（机制见 §3.5）。这是一次性成本，不做就会出现两套视觉并存。
+2. 组件库默认是 Vant 风（主色 `#4D80F0`、圆角与投影均为库默认值），与本项目「亮白 + 紫罗兰」的 token 体系不是一套 → **必须做主题桥接**（机制见 §3.5）。这是一次性成本，不做就会出现两套视觉并存。
 3. Wot 社区规模小于 uView 系（市场占比约 6–8% vs 15–20%），冷门问题难搜到答案 → **单个问题卡住超过 1 小时就换自研或求助，不硬耗**。
 
 > 顺带一个可写进简历的收益：D3 会实测「引入组件库前 / 后的主包体积与 T1」，这组数据体现的是**工程取舍能力**，而不是"我会用组件库"。
@@ -453,10 +453,14 @@ accounts/
 ├─ design/
 │  ├─ figma-plugin/            一键生成设计稿的 Figma 插件（manifest.json + code.js）
 │  ├─ tokens/                  Figma Variables 导出的 tokens.json（种子已就位）
+│  ├─ preview/                 开发前视觉评审稿：template.html（人写）→ index.html（产物，可直接打开）
+│  │  └─ variants/             视觉方向未定时的并排对比稿：*.json 只覆盖 token → *.html + index.html
 │  └─ screenshots/             双端对照截图
 ├─ scripts/                    设计 Token 生成器与校验（不进主包）
-│  ├─ lib/token-naming.mjs     三层命名唯一实现（UI_SPEC §2.7），两个生成器共用
+│  ├─ lib/token-naming.mjs     三层命名唯一实现（UI_SPEC §2.7），三个生成器共用
 │  ├─ gen-scss.mjs             tokens.json → src/styles/tokens.scss
+│  ├─ gen-preview.mjs          tokens.json → design/preview/index.html（UI 效果图）
+│  │                           `--variants` → design/preview/variants/（多套配色并排对比）
 │  ├─ gen-figma-tokens.mjs     tokens.json → design/figma-plugin/code.js 的 TOKENS 区
 │  └─ check-figma-plugin.mjs   mock 运行 Figma 插件，抓运行时错误（不用开 Figma）
 ├─ src/

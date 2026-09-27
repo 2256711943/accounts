@@ -1,31 +1,36 @@
 # UI_SPEC.md — 一拍记（SnapLedger）UI 设计规范
 
-> 版本：v1.1 ｜ 日期：2026-09-22 ｜ 关联：`SPEC.md`、`ARCHITECTURE.md`、`DEV_PLAN.md`
-> 配套交付：Figma 设计文件 + `design/tokens/tokens.json` + `src/styles/tokens.scss` + `src/styles/wot-theme.scss`
+> 版本：v1.2 ｜ 日期：2026-09-26 ｜ 关联：`SPEC.md`、`ARCHITECTURE.md`、`DEV_PLAN.md`
+> 配套交付：Figma 设计文件 + `design/tokens/tokens.json` + `src/styles/tokens.scss` + `src/styles/wot-theme.scss` + `design/preview/index.html`（开发前效果稿）
 > **v1.1 修订**：§4 组件清单重构为「自研 7 / 外采 10 / 业务 6」三层 + 新增 §4.3 组件库主题变量映射表；新增 §2.7 变量命名约定（Figma → tokens.json → 代码）；§2、§5、§6、§7、§8 同步更新。
+> **v1.2 修订**：视觉方向由「暖白纸感（赤陶橙）」整体切到「亮白现代感（紫罗兰）」。同步 §1 基调、§2 色板 / 字阶 / 圆角 / 阴影、§4.3 组件库映射、§7 示例；`design/preview/template.html` 与 `src/pages.json` 的写死色值一并更新。依据为 `design/preview/variants/` 三套对比稿评审（同版式、只换 token），选定方案 C。**所有色值以 `design/tokens/tokens.json` 为准。**
 
 ---
 
 ## 1. 设计基调
 
 ### 1.1 关键词
-**暖白纸感 · 墨黑文字 · 赤陶橙单一强调 · 数字主角**
+**近白底 · 冷紫灰文字 · 紫罗兰单一强调 · 大圆角 · 数字主角**
 
 ### 1.2 为什么这样选（这是要学到的设计判断，不是审美偏好）
 
+> **改版记录**：2026-09-26 由 v1.1「暖白纸感（赤陶橙）」切到 v1.2「亮白现代感（紫罗兰）」。
+> 依据是 `design/preview/variants/` 的三套对比稿评审（同一版式、只换 token），选定方案 C；
+> 旧色值可在 git 历史里找到。**本文所有色值以 `design/tokens/tokens.json` 为准。**
+
 | 决策 | 理由 |
 |---|---|
-| 底色用暖白 `#FAF9F5` 而非纯白 | 纯白在 OLED 屏上刺眼，长时间浏览记账流水会疲劳；暖白更像"纸质账本"，契合品类 |
-| 文字用墨黑 `#2C2C2A` 而非 `#000` | 纯黑与背景对比度过高（>18:1），视觉生硬；墨黑 + 暖白约 12:1，可读性足够且更柔和 |
-| 只用一个强调色（赤陶橙） | 多色强调 = 没有强调。一屏只有一个交互色，用户才知道该点哪里 |
-| **刻意避开蓝紫渐变** | AI 生成的设计 90% 长这样（`#6366F1` → `#8B5CF6`）。暖橙系能让页面在同类作品里被一眼记住 |
-| 层级靠「留白 + 字重 + 色阶」，不靠边框 | 满屏 1px 分割线是廉价感的头号来源。能用 24rpx 间距解决的就不要画线 |
+| 页面底色用近白 `#FAFAFC`、卡片用纯白 `#FFFFFF` | 底与卡都纯白就没有边界，只能靠投影分层，投影一重就显脏；底色压冷一档，白卡自然浮起，投影可以很轻 |
+| 文字用 `#17141F` 而非 `#000` | 纯黑与背景对比过高（>18:1），视觉生硬；`#17141F` 与底约 16:1，可读性足够且更柔和 |
+| 只用一个强调色（紫罗兰） | 多色强调 = 没有强调。一屏只有一个交互色，用户才知道该点哪里 |
+| **有意识地接受「紫蓝撞脸」风险** | AI 生成的设计高发于 `#6366F1` → `#8B5CF6` 区间，v1.1 因此刻意避开、改走暖橙。v1.2 以「现代感 / 产品感」为第一诉求，主动选紫罗兰；对冲手段不靠色相本身，而靠**大圆角（`--r-lg` 22px）+ 带主色倾向的投影（`--sh-2`）+ 拉开的字阶（`--fs-display` 40px）** |
+| 层级靠「留白 + 字重 + 色阶 + 极轻投影」，不靠边框 | 满屏 1px 分割线是廉价感的头号来源。能用 24rpx 间距解决的就不要画线 |
 | 数字是主角 | 记账 App 的核心信息是金额。金额用最大字阶 + `tabular-nums` 等宽数字，保证多行对齐 |
 | 一屏一个视觉焦点 | 首页焦点只有一个：本月总支出。其余元素全部降级为辅助信息 |
 
 ### 1.3 视觉参考方向
-- 参考品类：瑞士派排版（强网格、大留白、克制的色）、纸质票据的质感
-- 不参考：主流记账 App 的高饱和糖果色、拟物化图标
+- 参考品类：现代消费级 App 的卡片化排版（大圆角、单层浮起、克制的投影）+ 瑞士派排版（强网格、大留白）
+- 不参考：主流记账 App 的高饱和糖果色、拟物化图标、满屏分割线的后台风
 
 ---
 
@@ -35,32 +40,32 @@
 >
 > **代码里禁止出现字面色值**——这条对第三方组件库同样成立：`src/styles/wot-theme.scss` 里的 `--wot-*` 变量必须引用 `tokens.scss` 的 SCSS 变量（`#{$color-accent}`），不得写字面量。
 >
-> 因此生成器需同时产出**两份形态**：**SCSS 变量**（`$color-accent: #E8663D`，供计算与组件库映射使用）+ **CSS 自定义属性**（`--color-accent`，供组件样式引用）。缺前者，组件库主题映射就得写字面量。
+> 因此生成器需同时产出**两份形态**：**SCSS 变量**（`$color-accent: #6C4BFF`，供计算与组件库映射使用）+ **CSS 自定义属性**（`--color-accent`，供组件样式引用）。缺前者，组件库主题映射就得写字面量。
 
 ### 2.1 色彩
 
 | Token | 值 | 用途 |
 |---|---|---|
-| `color/bg/base` | `#FAF9F5` | 页面底色（暖白） |
+| `color/bg/base` | `#FAFAFC` | 页面底色（近白微冷） |
 | `color/bg/surface` | `#FFFFFF` | 卡片、列表项 |
-| `color/bg/subtle` | `#F2F0E9` | 次级块、标签底、骨架屏底 |
-| `color/bg/mask` | `rgba(44,44,42,0.45)` | 弹层遮罩 |
-| `color/line` | `rgba(44,44,42,0.08)` | 必要分割线（尽量少用） |
-| `color/line/strong` | `rgba(44,44,42,0.16)` | 输入框边框、需强调的分隔 |
-| `color/text/primary` | `#2C2C2A` | 主文案、支出金额 |
-| `color/text/secondary` | `#6B6A64` | 辅助说明、时间、分类名 |
-| `color/text/tertiary` | `#9C9A92` | 占位符、禁用态 |
+| `color/bg/subtle` | `#F0F0F5` | 次级块、标签底、骨架屏底 |
+| `color/bg/mask` | `rgba(24,16,56,0.46)` | 弹层遮罩 |
+| `color/line` | `rgba(24,16,56,0.07)` | 必要分割线（尽量少用） |
+| `color/line/strong` | `rgba(24,16,56,0.14)` | 输入框边框、需强调的分隔 |
+| `color/text/primary` | `#17141F` | 主文案、支出金额 |
+| `color/text/secondary` | `#5E5A6E` | 辅助说明、时间、分类名 |
+| `color/text/tertiary` | `#9793A3` | 占位符、禁用态 |
 | `color/text/inverse` | `#FFFFFF` | 深底上的文字 |
-| `color/accent` | `#E8663D` | **唯一强调色**：主按钮、FAB、选中态、关键数字强调 |
-| `color/accent/pressed` | `#C9502C` | 按压态 |
-| `color/accent/soft` | `#FBEDE7` | 强调色的浅底（选中标签底） |
-| `color/success` | `#2F8F7A` | 收入金额、同步成功 |
-| `color/warning` | `#D9952B` | 待同步、识别降级提示 |
-| `color/danger` | `#C4453C` | 删除、同步失败 |
-| `color/info` | `#5B7A8C` | 中性提示（雾蓝，非品牌蓝） |
+| `color/accent` | `#6C4BFF` | **唯一强调色**：主按钮、FAB、选中态、关键数字强调 |
+| `color/accent/pressed` | `#5433DB` | 按压态 |
+| `color/accent/soft` | `#EEE9FF` | 强调色的浅底（选中标签底） |
+| `color/success` | `#12A594` | 收入金额、同步成功 |
+| `color/warning` | `#F0A32B` | 待同步、识别降级提示 |
+| `color/danger` | `#E0464B` | 删除、同步失败 |
+| `color/info` | `#6C7B99` | 中性提示（雾蓝，非品牌色） |
 
-**图表配色（环形图，5 色循环，暖调）**：
-`#E8663D` → `#D9952B` → `#2F8F7A` → `#B4566E` → `#5B7A8C`
+**图表配色（环形图，5 色循环）**：
+`#6C4BFF` → `#12A594` → `#F0A32B` → `#FF6B9A` → `#7C8AA5`
 
 ### 2.2 字体与字阶
 
@@ -72,9 +77,9 @@ $font-sans: -apple-system, "PingFang SC", "HarmonyOS Sans SC", "Noto Sans SC", "
 
 | Token | 字号(px) | rpx | 行高 | 字重 | 用途 |
 |---|---|---|---|---|---|
-| `--fs-display` | 34 | 68 | 1.15 | 500 | 首页本月总支出 |
-| `--fs-h1` | 22 | 44 | 1.30 | 500 | 页面大标题 |
-| `--fs-h2` | 17 | 34 | 1.40 | 500 | 区块标题、卡片主标题 |
+| `--fs-display` | 40 | 80 | 1.15 | 500 | 首页本月总支出 |
+| `--fs-h1` | 25 | 50 | 1.30 | 500 | 页面大标题 |
+| `--fs-h2` | 18 | 36 | 1.40 | 500 | 区块标题、卡片主标题 |
 | `--fs-body` | 15 | 30 | 1.50 | 400 | 列表主文案 |
 | `--fs-caption` | 13 | 26 | 1.40 | 400 | 辅助说明、时间 |
 | `--fs-tiny` | 11 | 22 | 1.30 | 400 | 标签、角标 |
@@ -100,20 +105,27 @@ $font-sans: -apple-system, "PingFang SC", "HarmonyOS Sans SC", "Noto Sans SC", "
 
 | Token | px | rpx | 用途 |
 |---|---|---|---|
-| `--r-sm` | 8 | 16 | 标签、小角标 |
-| `--r-md` | 12 | 24 | 输入框、小卡片 |
-| `--r-lg` | 16 | 32 | 主卡片、FAB |
-| `--r-xl` | 20 | 40 | 底部抽屉顶部两角 |
+| `--r-sm` | 10 | 20 | 标签、小角标 |
+| `--r-md` | 16 | 32 | 输入框、小卡片 |
+| `--r-lg` | 22 | 44 | 主卡片、FAB |
+| `--r-xl` | 28 | 56 | 底部抽屉顶部两角 |
 | `--r-full` | 999 | — | 药丸按钮、头像 |
 
-### 2.5 阴影（极轻，仅两级）
+> v1.2 把圆角整体放大（原 8 / 12 / 16 / 20）。圆角是「现代感」最省力的杠杆，但**必须四档一起放大**：
+> 只放大卡片不改标签，会在同一屏里出现两代视觉语言。
+
+### 2.5 阴影（仅两级，v1.2 起允许主色倾向）
 
 | Token | 值 | 用途 |
 |---|---|---|
-| `--sh-1` | `0 1px 2px rgba(44,44,42,0.04)` | 列表卡片 |
-| `--sh-2` | `0 4px 16px rgba(44,44,42,0.06)` | 悬浮 FAB、底部抽屉 |
+| `--sh-1` | `0 1px 2px rgba(30,20,70,0.06), 0 2px 8px rgba(30,20,70,0.05)` | 列表卡片（近距硬 + 远距软，两层叠加） |
+| `--sh-2` | `0 12px 30px rgba(70,45,160,0.16)` | 悬浮 FAB、底部抽屉、弹层 |
 
-禁止：彩色阴影、多层大扩散阴影、内阴影（除 Liquid Glass 效果外）。
+**规则**（v1.1 曾禁「彩色阴影 / 多层阴影」，v1.2 为层次感放开这两条，同时加约束）：
+- 阴影色**必须**取自文字色或强调色的同色系（`rgba(30,20,70,·)` / `rgba(70,45,160,·)`）；
+  **禁止纯黑** `rgba(0,0,0,·)` —— 纯黑投影落在白底上会发灰发脏，是廉价感的第二大来源
+- 透明度上限 **0.2**：投影只负责提示"浮起"，不是视觉主角
+- 层数上限 **2**；禁止内阴影（除 Liquid Glass 效果外）
 
 ### 2.6 动效
 
@@ -180,7 +192,7 @@ FAB、底部抽屉、自定义 tabBar 三个位置**必须**处理底部安全�
 ### 3.3 H5 宽屏
 
 - 内容容器 `max-width: 480px; margin: 0 auto;`
-- 两侧露出底色 `#F2F0E9`，并加 `box-shadow: 0 0 24px rgba(44,44,42,0.06)` 制造"手机壳"感
+- 两侧露出底色 `--color-bg-subtle`（`#F0F0F5`），并加 `box-shadow: 0 0 24px rgba(24,16,56,0.08)` 制造"手机壳"感
 - uni-app 需配置 `rpxCalcMaxDeviceWidth`（默认 960），超过后按最大宽度换算，避免大屏上间距被拉爆
 
 ### 3.4 经典移动端坑位（必须处理）
@@ -249,22 +261,22 @@ FAB、底部抽屉、自定义 tabBar 三个位置**必须**处理底部安全�
 
 | Wot 变量 | 默认值 | 映射到我们的 token |
 |---|---|---|
-| `--wot-color-theme` | `#4D80F0` | `color/accent` `#E8663D` |
-| `--wot-color-success` | `#34d19d` | `color/success` `#2F8F7A` |
-| `--wot-color-warning` | `#f0883a` | `color/warning` `#D9952B` |
-| `--wot-color-danger` | `#fa4350` | `color/danger` `#C4453C` |
-| `--wot-color-info` | `#909399` | `color/info` `#5B7A8C` |
-| `--wot-color-title` | `#000000` | `color/text/primary` `#2C2C2A` |
-| `--wot-color-content` | `#262626` | `color/text/primary` `#2C2C2A` |
-| `--wot-color-secondary` | `#595959` | `color/text/secondary` `#6B6A64` |
-| `--wot-color-aid` | `#8c8c8c` | `color/text/secondary` `#6B6A64` |
-| `--wot-color-tip` | `#bfbfbf` | `color/text/tertiary` `#9C9A92` |
-| `--wot-color-border` | `#d9d9d9` | `color/line/strong` `rgba(44,44,42,.16)` |
-| `--wot-color-border-light` | `#e8e8e8` | `color/line` `rgba(44,44,42,.08)` |
-| `--wot-color-bg` | `#f5f5f5` | `color/bg/subtle` `#F2F0E9` |
-| `--wot-overlay-bg` | `rgba(0,0,0,.65)` | `color/bg/mask` `rgba(44,44,42,.45)` |
-| `--wot-fs-big` | 24px | `--fs-h1` 22px |
-| `--wot-fs-title` | 16px | `--fs-h2` 17px |
+| `--wot-color-theme` | `#4D80F0` | `color/accent` `#6C4BFF` |
+| `--wot-color-success` | `#34d19d` | `color/success` `#12A594` |
+| `--wot-color-warning` | `#f0883a` | `color/warning` `#F0A32B` |
+| `--wot-color-danger` | `#fa4350` | `color/danger` `#E0464B` |
+| `--wot-color-info` | `#909399` | `color/info` `#6C7B99` |
+| `--wot-color-title` | `#000000` | `color/text/primary` `#17141F` |
+| `--wot-color-content` | `#262626` | `color/text/primary` `#17141F` |
+| `--wot-color-secondary` | `#595959` | `color/text/secondary` `#5E5A6E` |
+| `--wot-color-aid` | `#8c8c8c` | `color/text/secondary` `#5E5A6E` |
+| `--wot-color-tip` | `#bfbfbf` | `color/text/tertiary` `#9793A3` |
+| `--wot-color-border` | `#d9d9d9` | `color/line/strong` `rgba(24,16,56,.14)` |
+| `--wot-color-border-light` | `#e8e8e8` | `color/line` `rgba(24,16,56,.07)` |
+| `--wot-color-bg` | `#f5f5f5` | `color/bg/subtle` `#F0F0F5` |
+| `--wot-overlay-bg` | `rgba(0,0,0,.65)` | `color/bg/mask` `rgba(24,16,56,.46)` |
+| `--wot-fs-big` | 24px | `--fs-h1` 25px |
+| `--wot-fs-title` | 16px | `--fs-h2` 18px |
 | `--wot-fs-content` | 14px | `--fs-body` 15px |
 | `--wot-fs-secondary` | 12px | `--fs-caption` 13px |
 | `--wot-fs-aid` | 10px | `--fs-tiny` 11px |
@@ -280,12 +292,12 @@ FAB、底部抽屉、自定义 tabBar 三个位置**必须**处理底部安全�
 |---|---|---|
 | `--wot-action-sheet-color` | `rgba(0,0,0,.85)` | `color/text/primary` |
 | `--wot-action-sheet-subname-color` | `rgba(0,0,0,.45)` | `color/text/secondary` |
-| `--wot-action-sheet-active-color` | `$-color-bg` | `color/accent-soft` `#FBEDE7` |
+| `--wot-action-sheet-active-color` | `$-color-bg` | `color/accent-soft` `#EEE9FF` |
 | `--wot-action-sheet-cancel-bg` | `rgba(240,240,240,1)` | `color/bg/subtle` |
-| `--wot-action-sheet-radius` | 16px | `--r-xl` 20px（对齐底部抽屉规格） |
+| `--wot-action-sheet-radius` | 16px | `--r-xl` 28px（对齐底部抽屉规格） |
 | `--wot-message-box-title-color` | `rgba(0,0,0,.85)` | `color/text/primary` |
 | `--wot-message-box-content-color` | `#666666` | `color/text/secondary` |
-| `--wot-toast-radius` | 8px | `--r-md` 12px |
+| `--wot-toast-radius` | 8px | `--r-md` 16px |
 | `--wot-toast-fs` | 14px | `--fs-body` 15px |
 | `--wot-switch-border-color` | `#e5e5e5` | `color/line/strong` |
 | `--wot-switch-inactive-color` | `#eaeaea` | `color/bg/subtle` |
@@ -325,7 +337,7 @@ page {                     // 小程序：组件库默认值挂在 page
 
 | 组件 | 说明 |
 |---|---|
-| `RecordItem` | 账单列表项：左侧 Avatar（分类色）+ 分类名/备注/时间，右侧金额（支出墨黑 / 收入青绿），右下角 `SyncBadge` |
+| `RecordItem` | 账单列表项：左侧 Avatar（分类色）+ 分类名/备注/时间，右侧金额（支出用 `color/text/primary` / 收入用 `color/success`），右下角 `SyncBadge` |
 | `SyncBadge` | 同步状态：`待同步`(琥珀点) / `同步中`(旋转) / `失败`(陶红点，可点重试) / 已同步(不显示) |
 | `CategoryPicker` | 分类选择：横向滚动的分类胶囊 + 「更多」唤起 `wd-action-sheet` |
 | `ConfirmCard` | 识别结果确认卡：图片缩略 + 4 个可编辑字段 + 置信度提示条（降级时显示琥珀条）+ 确认/重拍 |
@@ -551,7 +563,7 @@ tabBar：**首页 / 统计 / 我的**（3 项，图标用 iconfont 字体，选�
 |---|---|---|---|
 | 页面 Frame | `P/页面名` | `P/首页` | `Frame 427` |
 | 组件 | `C/组件名/变体` | `C/Button/Primary` | `Rectangle 12` |
-| 变量 | `分组/名称` | `color/accent`、`space/4` | `#E8663D` |
+| 变量 | `分组/名称` | `color/accent`、`space/4` | `#6C4BFF` |
 | 图层组 | 语义化 | `Header`、`TotalAmount` | `Group 8` |
 
 ### 7.3 设计稿生成加速（关键：省 1–2 天手工拖拽）
@@ -574,9 +586,11 @@ tabBar：**首页 / 统计 / 我的**（3 项，图标用 iconfont 字体，选�
 ### 7.4 Tokens 单一来源 → 代码
 
 ```
-Figma Variables
-   └─(导出 JSON)─► design/tokens/tokens.json
-        └─(脚本 gen:scss)─► src/styles/tokens.scss   ← 代码里唯一允许写值的地方
+Figma Variables  ◄──(回写：gen:figma 生成插件，插件在 Figma 里重建变量)
+   └─(导出 JSON)─► design/tokens/tokens.json     ← 唯一来源（人也只改这里）
+        ├─(gen:scss)────► src/styles/tokens.scss      ← 代码里唯一允许写值的地方
+        ├─(gen:figma)───► design/figma-plugin/code.js ← 设计稿生成器的 TOKENS 区
+        └─(gen:preview)─► design/preview/index.html   ← 开发前视觉评审稿（可截图存档）
              └─► 组件只引用 var(--color-accent)，不写死色值
 ```
 
@@ -584,10 +598,10 @@ Figma Variables
 
 ```json
 {
-  "color": { "accent": { "$value": "#E8663D", "$type": "color" },
-             "bg": { "base": { "$value": "#FAF9F5", "$type": "color" } } },
+  "color": { "accent": { "$value": "#6C4BFF", "$type": "color" },
+             "bg": { "base": { "$value": "#FAFAFC", "$type": "color" } } },
   "space": { "4": { "$value": "16px", "$type": "dimension" } },
-  "radius": { "lg": { "$value": "16px", "$type": "dimension" } }
+  "radius": { "lg": { "$value": "22px", "$type": "dimension" } }
 }
 ```
 

@@ -1,0 +1,44 @@
+{
+  "name": "方案 A · 冷调专业感（靛蓝 + 冷灰白）",
+  "note": "冷灰白底 + 靛蓝主色，卡片纯白浮起，双层柔和投影 + 中等圆角。气质克制可信，最像成熟金融产品；风险是「标准答案」，个性偏弱。三套里最保险的一套。",
+  "tokens": {
+    "color-bg-base": "#F4F5F7",
+    "color-bg-surface": "#FFFFFF",
+    "color-bg-subtle": "#EAECF0",
+    "color-bg-mask": "rgba(16,20,28,0.48)",
+
+    "color-line": "rgba(16,20,28,0.07)",
+    "color-line-strong": "rgba(16,20,28,0.14)",
+
+    "color-text-primary": "#14181F",
+    "color-text-secondary": "#5A6270",
+    "color-text-tertiary": "#949CAA",
+    "color-text-inverse": "#FFFFFF",
+
+    "color-accent": "#2E5BFF",
+    "color-accent-pressed": "#1E44D6",
+    "color-accent-soft": "#E8EEFF",
+
+    "color-success": "#0E9F6E",
+    "color-warning": "#E0982C",
+    "color-danger": "#D93A2B",
+    "color-info": "#5B7A8C",
+
+    "color-chart-c1": "#2E5BFF",
+    "color-chart-c2": "#00B8A9",
+    "color-chart-c3": "#E0982C",
+    "color-chart-c4": "#8B5CF6",
+    "color-chart-c5": "#64748B",
+
+    "fs-display": "38px",
+    "fs-h1": "24px",
+
+    "r-sm": "10px",
+    "r-md": "12px",
+    "r-lg": "18px",
+    "r-xl": "22px",
+
+    "sh-1": "0 1px 2px rgba(16,20,28,0.05), 0 2px 6px rgba(16,20,28,0.04)",
+    "sh-2": "0 8px 24px rgba(16,20,28,0.10)"
+  }
+}

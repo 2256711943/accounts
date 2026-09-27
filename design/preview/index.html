@@ -1,0 +1,1357 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>一拍记 SnapLedger — UI 效果图（Hi-Fi 视觉稿）</title>
+<style>
+/* ═══════════════════════════════════════════════════════════════════════════
+ * design/preview/template.html —— UI 效果图模板（人写，可改）
+ *
+ *   本文件是**模板**，不是可交付产物：
+ *   产物是同目录的 `index.html`，由 scripts/gen-preview.mjs 把下面这行的
+ *   CSS 自定义属性块注入后生成（自包含、可直接双击打开）。
+ *
+ *       npm run gen:preview            生成 / 覆盖 design/preview/index.html
+ *       npm run gen:preview -- --check 只校验产物与模板 + tokens 是否同步
+ *
+ *   页面里**不写字面色值**：颜色 / 字号 / 间距 / 圆角 / 阴影全部引用 var(--token)，
+ *   与 src/ 下的产品代码同源。改 design/tokens/tokens.json → 重跑一次 → 效果同步更新。
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ═══════════════════════════════════════════════════════════════════════
+ * 【自动注入，禁止手改】design/tokens/tokens.json → CSS 自定义属性
+ * 源版本 1.2.0 · 导出日期 2026-09-26 · 共 63 个 token
+ * 效果图不跑在小程序里，所以只需要 :root（产品代码里的 sg-css-vars 是 `:root, page`）
+ * ═══════════════════════════════════════════════════════════════════════ */
+:root {
+  --color-bg-base: #FAFAFC;
+  --color-bg-surface: #FFFFFF;
+  --color-bg-subtle: #F0F0F5;
+  --color-bg-mask: rgba(24,16,56,0.46);
+  --color-line: rgba(24,16,56,0.07);
+  --color-line-strong: rgba(24,16,56,0.14);
+  --color-text-primary: #17141F;
+  --color-text-secondary: #5E5A6E;
+  --color-text-tertiary: #9793A3;
+  --color-text-inverse: #FFFFFF;
+  --color-accent: #6C4BFF;
+  --color-accent-pressed: #5433DB;
+  --color-accent-soft: #EEE9FF;
+  --color-success: #12A594;
+  --color-warning: #F0A32B;
+  --color-danger: #E0464B;
+  --color-info: #6C7B99;
+  --color-chart-c1: #6C4BFF;
+  --color-chart-c2: #12A594;
+  --color-chart-c3: #F0A32B;
+  --color-chart-c4: #FF6B9A;
+  --color-chart-c5: #7C8AA5;
+  --font-family-sans: -apple-system, "PingFang SC", "HarmonyOS Sans SC", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+  --fs-display: 40px;
+  --fs-h1: 25px;
+  --fs-h2: 18px;
+  --fs-body: 15px;
+  --fs-caption: 13px;
+  --fs-tiny: 11px;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-line-height-display: 1.15;
+  --font-line-height-h1: 1.3;
+  --font-line-height-h2: 1.4;
+  --font-line-height-body: 1.5;
+  --font-line-height-caption: 1.4;
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-8: 32px;
+  --r-sm: 10px;
+  --r-md: 16px;
+  --r-lg: 22px;
+  --r-xl: 28px;
+  --r-full: 999px;
+  --sh-1: 0 1px 2px rgba(30,20,70,0.06), 0 2px 8px rgba(30,20,70,0.05);
+  --sh-2: 0 12px 30px rgba(70,45,160,0.16);
+  --dur-fast: 120ms;
+  --dur-base: 200ms;
+  --dur-slow: 320ms;
+  --ease-std: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --layout-design-width: 375;
+  --layout-rpx-ratio: 2;
+  --layout-h5-max-width: 480px;
+  --layout-page-padding: 16px;
+  --layout-tab-bar-height: 50px;
+  --layout-nav-bar-height: 44px;
+  --layout-fab-size: 56px;
+  --layout-cell-min-height: 44px;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+ * 版式外壳（.doc-* / .phone / .screen）——只服务于「看效果」，不是产品代码
+ * ───────────────────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: var(--sp-8) var(--sp-6);
+  background-color: var(--color-bg-subtle);
+  color: var(--color-text-primary);
+  font-family: var(--font-family-sans);
+  font-size: var(--fs-body);
+  line-height: var(--font-line-height-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+.doc-wrap { max-width: 1320px; margin: 0 auto; }
+.doc-wrap code {
+  padding: 1px 4px;
+  background-color: var(--color-bg-surface);
+  border-radius: var(--r-sm);
+  font-size: var(--fs-caption);
+}
+
+/* 页头 */
+.doc-head { padding-bottom: var(--sp-6); border-bottom: 1px solid var(--color-line); }
+.doc-kicker { font-size: var(--fs-tiny); letter-spacing: 0.14em; text-transform: uppercase; color: var(--color-text-tertiary); }
+.doc-title { margin: var(--sp-2) 0 0; font-size: var(--fs-h1); font-weight: var(--font-weight-medium); line-height: var(--font-line-height-h1); }
+.doc-lead { max-width: 84ch; margin: var(--sp-3) 0 0; font-size: var(--fs-caption); color: var(--color-text-secondary); }
+.doc-meta { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin-top: var(--sp-4); }
+.doc-chip {
+  padding: var(--sp-1) var(--sp-3);
+  background-color: var(--color-bg-surface);
+  border-radius: var(--r-full);
+  box-shadow: var(--sh-1);
+  font-size: var(--fs-tiny);
+  color: var(--color-text-secondary);
+}
+.doc-chip--warn { background-color: color-mix(in srgb, var(--color-warning) 16%, var(--color-bg-surface)); color: var(--color-warning); }
+
+/* 区块 */
+.doc-section { margin-top: var(--sp-8); }
+.doc-section__head { display: flex; align-items: baseline; gap: var(--sp-3); padding-bottom: var(--sp-3); border-bottom: 1px solid var(--color-line); }
+.doc-section__no { font-size: var(--fs-tiny); letter-spacing: 0.14em; color: var(--color-accent); }
+.doc-section__title { margin: 0; font-size: var(--fs-h2); font-weight: var(--font-weight-medium); }
+.doc-section__note { margin-left: auto; font-size: var(--fs-tiny); color: var(--color-text-tertiary); }
+.doc-sub { margin: var(--sp-6) 0 var(--sp-3); font-size: var(--fs-title, var(--fs-h2)); font-size: var(--fs-h2); font-weight: var(--font-weight-medium); }
+
+/* 手机框：375 × 812（UI_SPEC §3.1 画板基准） */
+.shots { display: flex; flex-wrap: wrap; gap: var(--sp-8) var(--sp-6); margin-top: var(--sp-6); }
+.shot { width: 375px; }
+.shot__cap { display: flex; align-items: baseline; gap: var(--sp-2); margin-bottom: var(--sp-3); }
+.shot__name { font-size: var(--fs-body); font-weight: var(--font-weight-medium); }
+.shot__spec { font-size: var(--fs-tiny); color: var(--color-text-tertiary); }
+.phone {
+  position: relative;
+  width: 375px;
+  height: 812px;
+  background-color: var(--color-bg-base);
+  border-radius: var(--r-xl);
+  box-shadow: var(--sh-2);
+  overflow: hidden;
+}
+
+/* 状态栏 / 导航栏 / tabBar —— 均为产品内真实尺寸 */
+.ui-sb {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: var(--layout-nav-bar-height);
+  padding: 0 var(--sp-5) 0 var(--sp-6);
+  color: var(--color-text-primary);
+}
+.ui-sb__time { font-size: var(--fs-caption); font-weight: var(--font-weight-medium); font-variant-numeric: tabular-nums; }
+.ui-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: var(--layout-nav-bar-height);
+  padding: 0 var(--sp-4);
+}
+.ui-nav__title { font-size: var(--fs-h2); font-weight: var(--font-weight-medium); }
+.ui-icon { width: 20px; height: 20px; display: block; }
+
+.ui-body { position: relative; height: calc(812px - var(--layout-nav-bar-height) * 2); padding: 0 var(--sp-4); overflow: hidden; }
+.ui-body--plain { height: calc(812px - var(--layout-nav-bar-height)); padding: 0; }
+.ui-scroll { height: 100%; overflow: hidden; }
+
+/* ── 通用原件 ──────────────────────────────────────────────────────────── */
+.ui-card { background-color: var(--color-bg-surface); border-radius: var(--r-lg); box-shadow: var(--sh-1); }
+.ui-card--flat { box-shadow: none; border: 1px solid var(--color-line); }
+.ui-card--pad { padding: var(--sp-4); }
+
+.ui-dot { width: 8px; height: 8px; border-radius: var(--r-full); flex: none; }
+.ui-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--r-full);
+  color: var(--color-text-inverse);
+  font-size: var(--fs-caption);
+  flex: none;
+}
+.ui-avatar--sm { width: 28px; height: 28px; font-size: var(--fs-tiny); }
+.ui-avatar--c1 { background-color: var(--color-chart-c1); }
+.ui-avatar--c2 { background-color: var(--color-chart-c2); }
+.ui-avatar--c3 { background-color: var(--color-chart-c3); }
+.ui-avatar--c4 { background-color: var(--color-chart-c4); }
+.ui-avatar--c5 { background-color: var(--color-chart-c5); }
+.ui-avatar--income { background-color: var(--color-success); }
+
+.ui-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-1);
+  padding: 0 var(--sp-5);
+  border: 0;
+  border-radius: var(--r-full);
+  font-family: inherit;
+  font-size: var(--fs-body);
+  font-weight: var(--font-weight-medium);
+  transition: transform var(--dur-fast) var(--ease-std), background-color var(--dur-fast) var(--ease-std);
+}
+.ui-btn--lg { height: 44px; }
+.ui-btn--md { height: 36px; }
+.ui-btn--sm { height: 28px; padding: 0 var(--sp-4); font-size: var(--fs-caption); }
+.ui-btn--primary { background-color: var(--color-accent); color: var(--color-text-inverse); }
+.ui-btn--ghost { background-color: transparent; border: 1px solid var(--color-line-strong); color: var(--color-text-primary); }
+.ui-btn--text { background-color: transparent; color: var(--color-text-secondary); font-weight: var(--font-weight-regular); }
+.ui-btn--danger { background-color: transparent; color: var(--color-danger); font-weight: var(--font-weight-regular); }
+.ui-btn:active { transform: scale(0.98); }
+
+.ui-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--sp-1) var(--sp-2);
+  border-radius: var(--r-sm);
+  font-size: var(--fs-tiny);
+  line-height: var(--font-line-height-caption);
+}
+.ui-tag--soft-accent  { background-color: var(--color-accent-soft); color: var(--color-accent); }
+.ui-tag--soft-success { background-color: color-mix(in srgb, var(--color-success) 14%, var(--color-bg-surface)); color: var(--color-success); }
+.ui-tag--soft-warning { background-color: color-mix(in srgb, var(--color-warning) 18%, var(--color-bg-surface)); color: var(--color-warning); }
+.ui-tag--soft-danger  { background-color: color-mix(in srgb, var(--color-danger) 14%, var(--color-bg-surface)); color: var(--color-danger); }
+.ui-tag--soft-info    { background-color: color-mix(in srgb, var(--color-info) 14%, var(--color-bg-surface)); color: var(--color-info); }
+.ui-tag--outline { border: 1px solid var(--color-line-strong); color: var(--color-text-secondary); }
+
+.ui-num { font-variant-numeric: tabular-nums; }
+
+/* ── 首页 ─────────────────────────────────────────────────────────────── */
+.ui-month { display: flex; align-items: center; gap: var(--sp-1); padding-top: var(--sp-3); font-size: var(--fs-h2); font-weight: var(--font-weight-medium); }
+.ui-hero { margin-top: var(--sp-5); }
+.ui-hero__num { font-size: var(--fs-display); font-weight: var(--font-weight-medium); line-height: var(--font-line-height-display); }
+.ui-hero__delta { display: flex; align-items: center; gap: var(--sp-1); margin-top: var(--sp-1); font-size: var(--fs-caption); color: var(--color-text-secondary); }
+.ui-hero__delta--down { color: var(--color-success); }
+
+.ui-overview { margin-top: var(--sp-5); padding: var(--sp-4); }
+.ui-overview__row + .ui-overview__row { margin-top: var(--sp-3); }
+.ui-overview__line { display: flex; align-items: center; gap: var(--sp-2); font-size: var(--fs-caption); }
+.ui-overview__name { color: var(--color-text-secondary); }
+.ui-overview__amt { margin-left: auto; color: var(--color-text-primary); font-weight: var(--font-weight-medium); }
+.ui-overview__pct { width: 34px; text-align: right; color: var(--color-text-tertiary); }
+.ui-bar { height: 6px; margin-top: var(--sp-2); background-color: var(--color-bg-subtle); border-radius: var(--r-full); overflow: hidden; }
+.ui-bar__fill { height: 100%; border-radius: var(--r-full); }
+
+.ui-filters { display: flex; gap: var(--sp-2); margin-top: var(--sp-5); }
+.ui-pill {
+  padding: var(--sp-1) var(--sp-3);
+  border-radius: var(--r-full);
+  background-color: var(--color-bg-surface);
+  font-size: var(--fs-caption);
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+.ui-pill--on { background-color: var(--color-accent-soft); color: var(--color-accent); font-weight: var(--font-weight-medium); }
+.ui-pill--more { margin-left: auto; color: var(--color-text-tertiary); }
+
+.ui-group { margin-top: var(--sp-5); }
+.ui-group__title { font-size: var(--fs-caption); color: var(--color-text-tertiary); }
+.ui-item { display: flex; align-items: center; gap: var(--sp-3); height: 56px; }
+.ui-item__main { flex: 1; min-width: 0; }
+.ui-item__name { font-size: var(--fs-body); }
+.ui-item__sub { font-size: var(--fs-caption); color: var(--color-text-secondary); }
+.ui-item__right { text-align: right; }
+.ui-item__amt { font-size: var(--fs-body); font-weight: var(--font-weight-medium); }
+.ui-item__amt--income { color: var(--color-success); }
+.ui-badge { display: inline-flex; align-items: center; gap: var(--sp-1); margin-top: var(--sp-1); font-size: var(--fs-tiny); }
+.ui-badge--pending { color: var(--color-warning); }
+.ui-badge--failed { color: var(--color-danger); }
+.ui-badge .ui-dot { width: 6px; height: 6px; background-color: currentColor; }
+
+.ui-fab {
+  position: absolute;
+  right: var(--sp-4);
+  bottom: calc(var(--layout-tab-bar-height) + var(--sp-6));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--layout-fab-size);
+  height: var(--layout-fab-size);
+  background-color: var(--color-accent);
+  border-radius: var(--r-full);
+  box-shadow: var(--sh-2);
+}
+.ui-fab .ui-icon { width: 26px; height: 26px; color: var(--color-text-inverse); }
+
+.ui-tabbar { display: flex; height: var(--layout-tab-bar-height); background-color: var(--color-bg-surface); border-top: 1px solid var(--color-line); }
+.ui-tab { display: flex; flex: 1; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: var(--fs-tiny); color: var(--color-text-tertiary); }
+.ui-tab--on { color: var(--color-accent); }
+.ui-tab .ui-icon { width: 22px; height: 22px; }
+
+/* ── 拍照 / 确认卡 ────────────────────────────────────────────────────── */
+.ui-capture { display: flex; flex-direction: column; height: calc(812px - var(--layout-nav-bar-height)); padding: 0 var(--sp-4) var(--sp-8); }
+.ui-capture__close { height: var(--layout-nav-bar-height); display: flex; align-items: center; font-size: 20px; color: var(--color-text-secondary); }
+.ui-viewfinder {
+  position: relative;
+  width: 311px;
+  height: 411px;
+  margin: var(--sp-2) auto 0;
+  background-color: var(--color-bg-subtle);
+  border-radius: var(--r-lg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-3);
+  color: var(--color-text-tertiary);
+  font-size: var(--fs-caption);
+}
+.ui-viewfinder__mark { position: absolute; width: 26px; height: 26px; border: 3px solid var(--color-accent); }
+.ui-viewfinder__mark--tl { top: -1px; left: -1px; border-right: 0; border-bottom: 0; border-top-left-radius: var(--r-lg); }
+.ui-viewfinder__mark--tr { top: -1px; right: -1px; border-left: 0; border-bottom: 0; border-top-right-radius: var(--r-lg); }
+.ui-viewfinder__mark--bl { bottom: -1px; left: -1px; border-right: 0; border-top: 0; border-bottom-left-radius: var(--r-lg); }
+.ui-viewfinder__mark--br { bottom: -1px; right: -1px; border-left: 0; border-top: 0; border-bottom-right-radius: var(--r-lg); }
+.ui-capture__hint { margin: var(--sp-4) 0 0; text-align: center; font-size: var(--fs-caption); color: var(--color-text-secondary); }
+.ui-capture__actions { display: flex; align-items: center; justify-content: space-around; margin-top: auto; padding-bottom: var(--sp-6); }
+.ui-action { display: flex; flex-direction: column; align-items: center; gap: var(--sp-2); font-size: var(--fs-caption); color: var(--color-text-secondary); }
+.ui-action__box { display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; background-color: var(--color-bg-surface); border-radius: var(--r-md); box-shadow: var(--sh-1); }
+.ui-shutter { display: flex; align-items: center; justify-content: center; width: 72px; height: 72px; border: 3px solid var(--color-accent); border-radius: var(--r-full); }
+.ui-shutter__core { width: 58px; height: 58px; background-color: var(--color-accent); border-radius: var(--r-full); }
+.ui-shutter__lbl { margin-top: var(--sp-2); font-size: var(--fs-caption); color: var(--color-text-tertiary); }
+
+.ui-sheet { position: absolute; right: 0; bottom: 0; left: 0; padding: var(--sp-5) var(--sp-4) var(--sp-6); background-color: var(--color-bg-surface); border-radius: var(--r-xl) var(--r-xl) 0 0; box-shadow: var(--sh-2); }
+.ui-banner { display: flex; align-items: center; gap: var(--sp-2); margin-bottom: var(--sp-4); padding: var(--sp-2) var(--sp-3); border-radius: var(--r-md); font-size: var(--fs-caption); }
+.ui-banner--warn { background-color: color-mix(in srgb, var(--color-warning) 16%, var(--color-bg-surface)); color: var(--color-warning); }
+.ui-confirm { display: flex; gap: var(--sp-3); }
+.ui-thumb { display: flex; align-items: center; justify-content: center; width: 84px; height: 84px; background-color: var(--color-bg-subtle); border-radius: var(--r-md); font-size: var(--fs-tiny); color: var(--color-text-tertiary); flex: none; }
+.ui-confirm__fields { flex: 1; display: flex; flex-direction: column; gap: var(--sp-2); }
+.ui-field { display: flex; align-items: center; gap: var(--sp-2); min-height: 28px; padding: 0 var(--sp-3); background-color: var(--color-bg-subtle); border-radius: var(--r-sm); font-size: var(--fs-caption); }
+.ui-field__cur { color: var(--color-text-tertiary); }
+.ui-field--amount { font-size: var(--fs-h1); font-weight: var(--font-weight-medium); background-color: transparent; padding: 0; }
+.ui-field--empty { color: var(--color-text-tertiary); }
+.ui-chev { margin-left: auto; width: 12px; height: 12px; color: var(--color-text-tertiary); }
+.ui-confirm__actions { display: flex; gap: var(--sp-3); margin-top: var(--sp-5); }
+.ui-confirm__actions .ui-btn { flex: 1; }
+
+/* ── 统计 ─────────────────────────────────────────────────────────────── */
+.ui-ring { display: flex; flex-direction: column; align-items: center; padding: var(--sp-5) var(--sp-4) var(--sp-4); }
+.ui-ring__chart { position: relative; width: 200px; height: 200px; }
+.ui-ring__chart svg { display: block; transform: rotate(-90deg); }
+.ui-ring__center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
+.ui-ring__total { font-size: var(--fs-h2); font-weight: var(--font-weight-medium); }
+.ui-ring__label { font-size: var(--fs-tiny); color: var(--color-text-tertiary); }
+.ui-ring__foot { display: flex; gap: var(--sp-3); margin-top: var(--sp-4); font-size: var(--fs-caption); color: var(--color-text-secondary); }
+.ui-ring__delta { color: var(--color-success); }
+
+.ui-detail { margin-top: var(--sp-5); }
+.ui-detail__row { display: flex; align-items: center; gap: var(--sp-3); height: 48px; }
+.ui-detail__row + .ui-detail__row { border-top: 1px solid var(--color-line); }
+
+/* ── 详情 / 我的 ──────────────────────────────────────────────────────── */
+.ui-receipt { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--sp-2); height: 180px; margin-top: var(--sp-3); background-color: var(--color-bg-subtle); border-radius: var(--r-lg); color: var(--color-text-tertiary); font-size: var(--fs-caption); }
+.ui-rows { margin-top: var(--sp-5); padding: 0 var(--sp-4); }
+.ui-row { display: flex; align-items: center; gap: var(--sp-3); min-height: var(--layout-cell-min-height); }
+.ui-row + .ui-row { border-top: 1px solid var(--color-line); }
+.ui-row__label { flex: none; width: 64px; font-size: var(--fs-body); color: var(--color-text-secondary); }
+.ui-row__value { margin-left: auto; font-size: var(--fs-body); }
+.ui-row__value--ph { color: var(--color-text-tertiary); }
+.ui-meta { display: flex; align-items: center; gap: var(--sp-2); margin-top: var(--sp-4); padding: 0 var(--sp-4); font-size: var(--fs-tiny); color: var(--color-text-tertiary); }
+.ui-danger-card { display: flex; align-items: center; justify-content: center; height: 52px; margin-top: var(--sp-5); }
+.ui-pcard { display: flex; align-items: center; gap: var(--sp-3); padding: var(--sp-4); }
+.ui-pcard__avatar { width: 48px; height: 48px; background-color: var(--color-bg-subtle); border: 1px solid var(--color-line-strong); }
+.ui-switch { position: relative; width: 44px; height: 26px; border-radius: var(--r-full); background-color: var(--color-bg-subtle); flex: none; }
+.ui-switch__knob { position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; background-color: var(--color-bg-surface); border-radius: var(--r-full); box-shadow: var(--sh-1); }
+.ui-switch--on { background-color: var(--color-accent); }
+.ui-switch--on .ui-switch__knob { left: 21px; }
+
+/* ── 空态 / 骨架 ─────────────────────────────────────────────────────── */
+.ui-empty { display: flex; flex-direction: column; align-items: center; gap: var(--sp-4); padding: var(--sp-8) var(--sp-6); text-align: center; }
+.ui-empty__text { font-size: var(--fs-caption); color: var(--color-text-secondary); }
+.ui-sk { background-color: var(--color-bg-subtle); border-radius: var(--r-sm); animation: ui-sk-pulse 1.6s var(--ease-std) infinite; }
+.ui-sk--line { height: 22px; }
+.ui-sk--block { border-radius: var(--r-lg); box-shadow: none; }
+@keyframes ui-sk-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+.ui-offline { display: flex; align-items: center; gap: var(--sp-2); height: 22px; padding: 0 var(--sp-4); background-color: color-mix(in srgb, var(--color-warning) 16%, var(--color-bg-surface)); color: var(--color-warning); font-size: var(--fs-tiny); }
+
+/* ─────────────────────────────────────────────────────────────────────────
+ * Foundations / 组件页的展示版式
+ * ───────────────────────────────────────────────────────────────────────── */
+.doc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: var(--sp-3); margin-top: var(--sp-6); }
+.doc-swatch { padding: var(--sp-3); background-color: var(--color-bg-surface); border-radius: var(--r-md); box-shadow: var(--sh-1); }
+.doc-swatch__chip { height: 44px; margin-bottom: var(--sp-2); border-radius: var(--r-sm); border: 1px solid var(--color-line); }
+.doc-swatch__name { font-size: var(--fs-tiny); font-weight: var(--font-weight-medium); }
+.doc-swatch__val { font-size: var(--fs-tiny); color: var(--color-text-tertiary); }
+
+.doc-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--sp-6) var(--sp-8); margin-top: var(--sp-6); }
+.doc-panel { padding: var(--sp-4); background-color: var(--color-bg-surface); border-radius: var(--r-lg); box-shadow: var(--sh-1); }
+.doc-panel__title { margin: 0 0 var(--sp-3); font-size: var(--fs-caption); color: var(--color-text-tertiary); letter-spacing: 0.08em; }
+.doc-line { display: flex; align-items: baseline; gap: var(--sp-3); }
+.doc-line + .doc-line { margin-top: var(--sp-2); }
+.doc-line__tag { width: 92px; flex: none; font-size: var(--fs-tiny); color: var(--color-text-tertiary); }
+.doc-sp { display: flex; align-items: center; gap: var(--sp-3); }
+.doc-sp + .doc-sp { margin-top: var(--sp-2); }
+.doc-sp__bar { height: 12px; background-color: var(--color-accent); border-radius: var(--r-sm); }
+.doc-r { width: 56px; height: 56px; background-color: var(--color-bg-subtle); border: 1px solid var(--color-line-strong); }
+.doc-sh { display: flex; gap: var(--sp-5); }
+.doc-sh__box { display: flex; align-items: flex-end; justify-content: center; width: 100px; height: 72px; padding: var(--sp-2); background-color: var(--color-bg-surface); border-radius: var(--r-md); font-size: var(--fs-tiny); color: var(--color-text-tertiary); }
+
+.doc-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-3); }
+.doc-row + .doc-row { margin-top: var(--sp-4); }
+.doc-row__cap { width: 100%; font-size: var(--fs-tiny); color: var(--color-text-tertiary); }
+
+.doc-notes { margin-top: var(--sp-6); padding: var(--sp-5); background-color: var(--color-bg-surface); border-radius: var(--r-lg); box-shadow: var(--sh-1); }
+.doc-notes ol, .doc-notes ul { margin: var(--sp-3) 0 0; padding-left: var(--sp-5); }
+.doc-notes li { margin-top: var(--sp-2); font-size: var(--fs-caption); color: var(--color-text-secondary); }
+.doc-notes li b { color: var(--color-text-primary); }
+.doc-foot { margin-top: var(--sp-8); padding-top: var(--sp-5); border-top: 1px solid var(--color-line); font-size: var(--fs-tiny); color: var(--color-text-tertiary); }
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0ms !important; transition-duration: 0ms !important; }
+}
+</style>
+</head>
+<body>
+<div class="doc-wrap">
+
+  <header class="doc-head">
+    <div class="doc-kicker">SnapLedger · Hi-Fi Visual Spec</div>
+    <h1 class="doc-title">一拍记 · 双端界面效果图</h1>
+    <p class="doc-lead">
+      开发前的视觉验收稿：按 <code>docs/UI_SPEC.md §5</code> 的页面规格与 <code>design/tokens/tokens.json</code> 的 Design Token 渲染，
+      用来确认<b>视觉方向、信息层级、间距节奏</b>是否符合预期，再决定动手写页面。
+      本页颜色 / 字号 / 间距 / 圆角 / 阴影<b>全部引用 token 变量</b>（无字面色值），
+      改 <code>tokens.json</code> 后重跑 <code>npm run gen:preview</code> 即可看到同步后的效果。
+      这是**效果图**，不是实现：交互（左滑删除、下拉刷新、抽屉动画）与真机字体渲染差异不在本页范围内。
+    </p>
+    <div class="doc-meta">
+      <span class="doc-chip">token 源版本 v1.2.0</span>
+      <span class="doc-chip">导出日期 2026-09-26</span>
+      <span class="doc-chip">画板 375 × 812 @1x</span>
+      <span class="doc-chip">设计稿 1px = 代码 2rpx</span>
+      <span class="doc-chip doc-chip--warn">开发前评审稿 · 非最终视觉</span>
+    </div>
+  </header>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       00 设计基调
+       ═══════════════════════════════════════════════════════════════════ -->
+  <section class="doc-section">
+    <div class="doc-section__head">
+      <span class="doc-section__no">00</span>
+      <h2 class="doc-section__title">设计基调（一句话判定标准）</h2>
+      <span class="doc-section__note">UI_SPEC §1</span>
+    </div>
+    <div class="doc-cols">
+      <div class="doc-panel">
+        <h3 class="doc-panel__title">近白底 · 冷紫灰文字 · 紫罗兰单一强调 · 大圆角 · 数字主角</h3>
+        <div class="doc-row">
+          <span class="ui-tag ui-tag--soft-accent">唯一强调色 #6C4BFF</span>
+          <span class="ui-tag ui-tag--soft-success">收入 / 成功</span>
+          <span class="ui-tag ui-tag--soft-warning">待同步 / 降级</span>
+          <span class="ui-tag ui-tag--soft-danger">删除 / 失败</span>
+          <span class="ui-tag ui-tag--soft-info">中性提示</span>
+          <span class="ui-tag ui-tag--outline">outline</span>
+        </div>
+      </div>
+      <div class="doc-panel">
+        <h3 class="doc-panel__title">自觉遵守的 5 条</h3>
+        <div class="doc-line"><span class="doc-line__tag">一屏一焦点</span><span style="font-size: var(--fs-caption); color: var(--color-text-secondary);">焦点只有「本月总支出」，其余降级为辅助</span></div>
+        <div class="doc-line"><span class="doc-line__tag">层级靠留白</span><span style="font-size: var(--fs-caption); color: var(--color-text-secondary);">用间距 / 字重 / 色阶分层，不画满屏分割线</span></div>
+        <div class="doc-line"><span class="doc-line__tag">字重只有两档</span><span style="font-size: var(--fs-caption); color: var(--color-text-secondary);">400 / 500，再粗就廉价</span></div>
+        <div class="doc-line"><span class="doc-line__tag">金额等宽</span><span style="font-size: var(--fs-caption); color: var(--color-text-secondary);">tabular-nums，保证多行右对齐</span></div>
+        <div class="doc-line"><span class="doc-line__tag">4px 栅格</span><span style="font-size: var(--fs-caption); color: var(--color-text-secondary);">所有间距落在 4 的倍数上，避免 0.5rpx 碎值</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       01 Foundations
+       ═══════════════════════════════════════════════════════════════════ -->
+  <section class="doc-section">
+    <div class="doc-section__head">
+      <span class="doc-section__no">01</span>
+      <h2 class="doc-section__title">Foundations</h2>
+      <span class="doc-section__note">色板 / 字阶 / 间距 / 圆角 / 阴影</span>
+    </div>
+
+    <h3 class="doc-sub">色板（17 个语义色 + 5 个图表色）</h3>
+    <div class="doc-grid">
+      <div class="doc-swatch"><div class="doc-swatch__chip" style="background-color: var(--color-bg-base);"></div><div class="doc-swatch__name">bg/base</div><div class="doc-swatch__val">#FAFAFC</div></div>
+      <div class="doc-swatch"><div class="doc-swatch__chip" style="background-color: var(--color-bg-surface);"></div><div class="doc-swatch__name">bg/surface</div><div class="doc-swatch__val">#FFFFFF</div></div>
+      <div class="doc-swatch"><div class="doc-swatch__chip" style="background-color: var(--color-bg-subtle);"></div><div class="doc-swatch__name">bg/subtle</div><div class="doc-swatch__val">#F0F0F5</div></div>
+      <div class="doc-swatch"><div class="doc-swatch__chip" style="background-color: var(--color-bg-mask);"></div><div class="doc-swatch__name">bg/mask</div><div class="doc-swatch__val">rgba .46</div></div>
+      <div class="doc-swatch"><div class="doc-swatch__chip" style="background-color: var(--color-line);"></div><div class="doc-swatch__name">line</div><div class="doc-swatch__val">rgba .07</div></div>
+      <div class="doc-swatch"><div class="doc-swatch__chip" style="background-color: var(--color-line-strong);"></div><div class="doc-swatch__name">line/strong</div><div class="doc-swatch__val">rgba .14</div></div>
+      <div class="doc-swatch"><div class="doc-swatch__chip" style="background-color: var(--color-text-primary);"></div><div class="doc-swatch__name">text/primary</div><div class="doc-swatch__val">#17141F</div></div>
+      <div class="doc-swatch"><div class="doc-swatch__chip" style="background-color: var(--color-text-secondary);"></div><div class="doc-swatch__name">text/secondary</div><div class="doc-swatch__val">#5E5A6E</div></div>
+      <div class="doc-swatch"><div class="doc-swatch__chip" style="background-color: var(--color-text-tertiary);"></div><div class="doc-swatch__name">text/tertiary</div><div class="doc-swatch__val">#9793A3</div></div>
+      <div class="doc-swatch"><div class="doc-swatch__chip" style="background-color: var(--color-accent);"></div><div class="doc-swatch__name">accent ★</div><div class="doc-swatch__val">#6C4BFF</div></div>
+      <div class="doc-swatch"><div class="doc-swatch__chip" style="background-color: var(--color-accent-pressed);"></div><div class="doc-swatch__name">accent/pressed</div><div class="doc-swatch__val">#5433DB</div></div>
+      <div class="doc-swatch"><div class="doc-swatch__chip" style="background-color: var(--color-accent-soft);"></div><div class="doc-swatch__name">accent/soft</div><div class="doc-swatch__val">#EEE9FF</div></div>
+      <div class="doc-swatch"><div class="doc-swatch__chip" style="background-color: var(--color-success);"></div><div class="doc-swatch__name">success</div><div class="doc-swatch__val">#12A594</div></div>
+      <div class="doc-swatch"><div class="doc-swatch__chip" style="background-color: var(--color-warning);"></div><div class="doc-swatch__name">warning</div><div class="doc-swatch__val">#F0A32B</div></div>
+      <div class="doc-swatch"><div class="doc-swatch__chip" style="background-color: var(--color-danger);"></div><div class="doc-swatch__name">danger</div><div class="doc-swatch__val">#E0464B</div></div>
+      <div class="doc-swatch"><div class="doc-swatch__chip" style="background-color: var(--color-info);"></div><div class="doc-swatch__name">info</div><div class="doc-swatch__val">#6C7B99</div></div>
+      <div class="doc-swatch"><div class="doc-swatch__chip" style="background-image: linear-gradient(90deg, var(--color-chart-c1) 0 20%, var(--color-chart-c2) 20% 40%, var(--color-chart-c3) 40% 60%, var(--color-chart-c4) 60% 80%, var(--color-chart-c5) 80% 100%);"></div><div class="doc-swatch__name">chart c1–c5</div><div class="doc-swatch__val">五色循环</div></div>
+    </div>
+
+    <div class="doc-cols">
+      <div class="doc-panel">
+        <h3 class="doc-panel__title">字阶（只有两档字重）</h3>
+        <div class="doc-line"><span class="doc-line__tag">display 40</span><span style="font-size: var(--fs-display); font-weight: var(--font-weight-medium); line-height: var(--font-line-height-display); font-variant-numeric: tabular-nums;">¥ 3,842.50</span></div>
+        <div class="doc-line"><span class="doc-line__tag">h1 25</span><span style="font-size: var(--fs-h1); font-weight: var(--font-weight-medium);">页面大标题</span></div>
+        <div class="doc-line"><span class="doc-line__tag">h2 18</span><span style="font-size: var(--fs-h2); font-weight: var(--font-weight-medium);">区块标题 / 卡片标题</span></div>
+        <div class="doc-line"><span class="doc-line__tag">body 15</span><span style="font-size: var(--fs-body);">列表主文案 · 肯德基</span></div>
+        <div class="doc-line"><span class="doc-line__tag">caption 13</span><span style="font-size: var(--fs-caption); color: var(--color-text-secondary);">辅助说明 · 12:30</span></div>
+        <div class="doc-line"><span class="doc-line__tag">tiny 11</span><span style="font-size: var(--fs-tiny); color: var(--color-text-tertiary);">标签 · 角标 · 待同步</span></div>
+      </div>
+
+      <div class="doc-panel">
+        <h3 class="doc-panel__title">间距（4 的倍数栅格）</h3>
+        <div class="doc-sp"><span class="doc-line__tag">sp-1 · 4</span><span class="doc-sp__bar" style="width: var(--sp-1);"></span></div>
+        <div class="doc-sp"><span class="doc-line__tag">sp-2 · 8</span><span class="doc-sp__bar" style="width: var(--sp-2);"></span></div>
+        <div class="doc-sp"><span class="doc-line__tag">sp-3 · 12</span><span class="doc-sp__bar" style="width: var(--sp-3);"></span></div>
+        <div class="doc-sp"><span class="doc-line__tag">sp-4 · 16</span><span class="doc-sp__bar" style="width: var(--sp-4);"></span><span style="font-size: var(--fs-tiny); color: var(--color-text-tertiary);">页面边距 / 卡片内边距</span></div>
+        <div class="doc-sp"><span class="doc-line__tag">sp-5 · 20</span><span class="doc-sp__bar" style="width: var(--sp-5);"></span></div>
+        <div class="doc-sp"><span class="doc-line__tag">sp-6 · 24</span><span class="doc-sp__bar" style="width: var(--sp-6);"></span></div>
+        <div class="doc-sp"><span class="doc-line__tag">sp-8 · 32</span><span class="doc-sp__bar" style="width: var(--sp-8);"></span><span style="font-size: var(--fs-tiny); color: var(--color-text-tertiary);">页面顶部大留白</span></div>
+      </div>
+
+      <div class="doc-panel">
+        <h3 class="doc-panel__title">圆角</h3>
+        <div class="doc-row">
+          <div class="doc-r" style="border-radius: var(--r-sm);"></div>
+          <div class="doc-r" style="border-radius: var(--r-md);"></div>
+          <div class="doc-r" style="border-radius: var(--r-lg);"></div>
+          <div class="doc-r" style="border-radius: var(--r-xl);"></div>
+          <div class="doc-r" style="border-radius: var(--r-full);"></div>
+        </div>
+        <div class="doc-row"><span style="font-size: var(--fs-tiny); color: var(--color-text-tertiary);">sm 10 · 标签　md 16 · 输入框　lg 22 · 主卡片 / FAB　xl 28 · 底部抽屉　full · 药丸</span></div>
+      </div>
+
+      <div class="doc-panel">
+        <h3 class="doc-panel__title">阴影（带主色倾向，两层叠加）</h3>
+        <div class="doc-sh">
+          <div class="doc-sh__box" style="box-shadow: var(--sh-1);">sh-1 列表卡片</div>
+          <div class="doc-sh__box" style="box-shadow: var(--sh-2);">sh-2 FAB / 抽屉</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       02 自研原子组件
+       ═══════════════════════════════════════════════════════════════════ -->
+  <section class="doc-section">
+    <div class="doc-section__head">
+      <span class="doc-section__no">02</span>
+      <h2 class="doc-section__title">自研原子组件（7 个）</h2>
+      <span class="doc-section__note">UI_SPEC §4.1 · D3 交付物</span>
+    </div>
+
+    <div class="doc-cols">
+      <div class="doc-panel">
+        <h3 class="doc-panel__title">Button · primary / ghost / text / danger × lg 44 / md 36 / sm 28</h3>
+        <div class="doc-row">
+          <span class="ui-btn ui-btn--lg ui-btn--primary">确认保存</span>
+          <span class="ui-btn ui-btn--lg ui-btn--ghost">重拍</span>
+        </div>
+        <div class="doc-row">
+          <span class="ui-btn ui-btn--md ui-btn--primary">主操作</span>
+          <span class="ui-btn ui-btn--md ui-btn--ghost">次操作</span>
+          <span class="ui-btn ui-btn--md ui-btn--text">文字按钮</span>
+          <span class="ui-btn ui-btn--md ui-btn--danger">删除</span>
+        </div>
+        <div class="doc-row"><span class="ui-btn ui-btn--sm ui-btn--primary">sm 28</span><span class="ui-btn ui-btn--sm ui-btn--ghost">sm ghost</span></div>
+      </div>
+
+      <div class="doc-panel">
+        <h3 class="doc-panel__title">Tag · soft / outline × 语义色</h3>
+        <div class="doc-row">
+          <span class="ui-tag ui-tag--soft-accent">待识别 0.92</span>
+          <span class="ui-tag ui-tag--soft-success">已同步</span>
+          <span class="ui-tag ui-tag--soft-warning">识别降级</span>
+          <span class="ui-tag ui-tag--soft-danger">同步失败</span>
+          <span class="ui-tag ui-tag--soft-info">多模态</span>
+          <span class="ui-tag ui-tag--outline">手动录入</span>
+        </div>
+      </div>
+
+      <div class="doc-panel">
+        <h3 class="doc-panel__title">Avatar · md 40 / sm 28（分类色）</h3>
+        <div class="doc-row">
+          <span class="ui-avatar ui-avatar--c1">餐</span>
+          <span class="ui-avatar ui-avatar--c2">交</span>
+          <span class="ui-avatar ui-avatar--c3">购</span>
+          <span class="ui-avatar ui-avatar--c4">日</span>
+          <span class="ui-avatar ui-avatar--c5">其</span>
+          <span class="ui-avatar ui-avatar--income">收</span>
+        </div>
+        <div class="doc-row"><span class="ui-avatar ui-avatar--sm ui-avatar--c1">餐</span><span class="ui-avatar ui-avatar--sm ui-avatar--c3">收</span></div>
+      </div>
+
+      <div class="doc-panel">
+        <h3 class="doc-panel__title">Card · flat / elevated</h3>
+        <div class="doc-row">
+          <div class="ui-card ui-card--pad" style="width: 160px;">
+            <div class="ui-item__name">elevated</div>
+            <div class="ui-item__sub" style="margin-top: var(--sp-1);">sh-1 · r-lg · pad sp-4</div>
+          </div>
+          <div class="ui-card ui-card--flat ui-card--pad" style="width: 160px;">
+            <div class="ui-item__name">flat</div>
+            <div class="ui-item__sub" style="margin-top: var(--sp-1);">1px line 描边，无阴影</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="doc-panel">
+        <h3 class="doc-panel__title">Cell · default / clickable / with-arrow</h3>
+        <div class="ui-row"><span class="ui-row__label">分类</span><span class="ui-row__value">餐饮</span></div>
+        <div class="ui-row"><span class="ui-row__label" style="width: 88px;">小票原图</span><span class="ui-row__value">已上传</span><svg class="ui-chev" viewBox="0 0 12 12" fill="none"><path d="M4.5 2.5 8 6l-3.5 3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="ui-row"><span class="ui-row__label" style="width: 88px;">备注</span><span class="ui-row__value ui-row__value--ph">点击填写</span></div>
+      </div>
+
+      <div class="doc-panel">
+        <h3 class="doc-panel__title">Skeleton · line / card / list</h3>
+        <div class="ui-sk ui-sk--line" style="width: 140px;"></div>
+        <div class="ui-sk ui-sk--block" style="height: 72px; margin-top: var(--sp-3);"></div>
+        <div class="doc-row">
+          <div class="ui-sk" style="width: 40px; height: 40px; border-radius: var(--r-full);"></div>
+          <div style="flex: 1;">
+            <div class="ui-sk ui-sk--line" style="height: 14px; width: 60%;"></div>
+            <div class="ui-sk ui-sk--line" style="height: 12px; width: 40%; margin-top: var(--sp-2);"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       03 页面效果图
+       ═══════════════════════════════════════════════════════════════════ -->
+  <section class="doc-section">
+    <div class="doc-section__head">
+      <span class="doc-section__no">03</span>
+      <h2 class="doc-section__title">五个页面 · 效果图</h2>
+      <span class="doc-section__note">375 × 812 · 示例数据</span>
+    </div>
+
+    <div class="shots">
+
+      <!-- ── 首页 ────────────────────────────────────────────────────── -->
+      <div class="shot">
+        <div class="shot__cap"><span class="shot__name">首页（账单）</span><span class="shot__spec">UI_SPEC §5.2 · 主包 · 自定义导航</span></div>
+        <div class="phone">
+          <div class="ui-sb">
+            <span class="ui-sb__time">9:41</span>
+            <svg width="66" height="12" viewBox="0 0 66 12" fill="none" aria-hidden="true">
+              <g fill="currentColor"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="6" width="3" height="6" rx="1"/><rect x="10" y="4" width="3" height="8" rx="1"/><rect x="15" y="2" width="3" height="10" rx="1"/></g>
+              <path d="M27 3.2c2.6-2 6.6-2 9.2 0M29 6.2c1.6-1.2 3.6-1.2 5.2 0" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+              <circle cx="31.6" cy="9" r="1.1" fill="currentColor"/>
+              <rect x="44" y="3" width="18" height="7" rx="2" stroke="currentColor" stroke-width="1.2" fill="none" opacity=".45"/>
+              <rect x="45.6" y="4.6" width="12" height="3.8" rx="1" fill="currentColor"/>
+              <path d="M63.4 5.4v2.2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" opacity=".45"/>
+            </svg>
+          </div>
+          <div class="ui-body">
+            <div class="ui-scroll">
+              <div class="ui-month">9月
+                <svg class="ui-chev" viewBox="0 0 12 12" fill="none" style="margin: 0;"><path d="M2.5 4.5 6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+              <div class="ui-hero">
+                <div class="ui-hero__num ui-num">¥ 3,842.50</div>
+                <div class="ui-hero__delta ui-hero__delta--down">
+                  <svg class="ui-chev" viewBox="0 0 12 12" fill="none" style="margin: 0; width: 10px; height: 10px;"><path d="M6 2v8M2.5 6.5 6 10l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  较上月 12.4%
+                </div>
+              </div>
+
+              <div class="ui-card ui-overview">
+                <div class="ui-overview__row">
+                  <div class="ui-overview__line"><span class="ui-dot" style="background-color: var(--color-chart-c1);"></span><span class="ui-overview__name">餐饮</span><span class="ui-overview__amt ui-num">¥1,280</span><span class="ui-overview__pct ui-num">33%</span></div>
+                  <div class="ui-bar"><div class="ui-bar__fill" style="width: 33%; background-color: var(--color-chart-c1);"></div></div>
+                </div>
+                <div class="ui-overview__row">
+                  <div class="ui-overview__line"><span class="ui-dot" style="background-color: var(--color-chart-c2);"></span><span class="ui-overview__name">交通</span><span class="ui-overview__amt ui-num">¥620</span><span class="ui-overview__pct ui-num">16%</span></div>
+                  <div class="ui-bar"><div class="ui-bar__fill" style="width: 16%; background-color: var(--color-chart-c2);"></div></div>
+                </div>
+                <div class="ui-overview__row">
+                  <div class="ui-overview__line"><span class="ui-dot" style="background-color: var(--color-chart-c3);"></span><span class="ui-overview__name">购物</span><span class="ui-overview__amt ui-num">¥540</span><span class="ui-overview__pct ui-num">14%</span></div>
+                  <div class="ui-bar"><div class="ui-bar__fill" style="width: 14%; background-color: var(--color-chart-c3);"></div></div>
+                </div>
+              </div>
+
+              <div class="ui-filters">
+                <span class="ui-pill ui-pill--on">全部</span>
+                <span class="ui-pill">餐饮</span>
+                <span class="ui-pill">交通</span>
+                <span class="ui-pill">购物</span>
+                <span class="ui-pill">日用</span>
+                <span class="ui-pill ui-pill--more">更多</span>
+              </div>
+
+              <div class="ui-group">
+                <div class="ui-group__title">今天</div>
+                <div class="ui-item">
+                  <span class="ui-avatar ui-avatar--c1">餐</span>
+                  <div class="ui-item__main"><div class="ui-item__name">餐饮</div><div class="ui-item__sub">肯德基 · 12:30</div></div>
+                  <div class="ui-item__right"><div class="ui-item__amt ui-num">¥38.50</div></div>
+                </div>
+                <div class="ui-item">
+                  <span class="ui-avatar ui-avatar--c2">交</span>
+                  <div class="ui-item__main"><div class="ui-item__name">交通</div><div class="ui-item__sub">地铁 · 08:15</div></div>
+                  <div class="ui-item__right"><div class="ui-item__amt ui-num">¥12.00</div></div>
+                </div>
+              </div>
+
+              <div class="ui-group">
+                <div class="ui-group__title">昨天</div>
+                <div class="ui-item">
+                  <span class="ui-avatar ui-avatar--c3">购</span>
+                  <div class="ui-item__main"><div class="ui-item__name">购物</div><div class="ui-item__sub">优衣库 · 19:40</div></div>
+                  <div class="ui-item__right"><div class="ui-item__amt ui-num">¥259.00</div><div class="ui-badge ui-badge--pending"><span class="ui-dot"></span>待同步</div></div>
+                </div>
+                <div class="ui-item">
+                  <span class="ui-avatar ui-avatar--c1">餐</span>
+                  <div class="ui-item__main"><div class="ui-item__name">餐饮</div><div class="ui-item__sub">沙县小吃 · 12:05</div></div>
+                  <div class="ui-item__right"><div class="ui-item__amt ui-num">¥22.50</div></div>
+                </div>
+              </div>
+
+              <div class="ui-group">
+                <div class="ui-group__title">9月24日</div>
+                <div class="ui-item">
+                  <span class="ui-avatar ui-avatar--income">收</span>
+                  <div class="ui-item__main"><div class="ui-item__name">收入</div><div class="ui-item__sub">退款到账 · 15:02</div></div>
+                  <div class="ui-item__right"><div class="ui-item__amt ui-item__amt--income ui-num">+ ¥128.00</div></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="ui-fab">
+              <svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5A2.5 2.5 0 0 1 5.5 6h1.7a1 1 0 0 0 .8-.4l.9-1.2a1 1 0 0 1 .8-.4h4.6a1 1 0 0 1 .8.4l.9 1.2a1 1 0 0 0 .8.4h1.7A2.5 2.5 0 0 1 21 8.5v8A2.5 2.5 0 0 1 18.5 19h-13A2.5 2.5 0 0 1 3 16.5z"/><circle cx="12" cy="12.5" r="3.6"/></svg>
+            </div>
+          </div>
+
+          <div class="ui-tabbar">
+            <div class="ui-tab ui-tab--on">
+              <svg class="ui-icon" viewBox="0 0 20 20" fill="none"><rect x="2.2" y="2.2" width="15.6" height="15.6" rx="5" stroke="currentColor" stroke-width="1.6"/><circle cx="10" cy="10" r="2.6" fill="currentColor"/></svg>
+              <span>首页</span>
+            </div>
+            <div class="ui-tab">
+              <svg class="ui-icon" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7.8" stroke="currentColor" stroke-width="1.6"/><path d="M10 2.2v7.8l5.5 3.2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+              <span>统计</span>
+            </div>
+            <div class="ui-tab">
+              <svg class="ui-icon" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="7" r="3.4" stroke="currentColor" stroke-width="1.6"/><path d="M3.6 17.2c0-3.5 2.9-6 6.4-6s6.4 2.5 6.4 6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+              <span>我的</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── 拍照识别 ────────────────────────────────────────────────── -->
+      <div class="shot">
+        <div class="shot__cap"><span class="shot__name">拍照识别</span><span class="shot__spec">UI_SPEC §5.3 · 独立分包 · 无导航</span></div>
+        <div class="phone">
+          <div class="ui-sb" style="color: var(--color-text-inverse);">
+            <span class="ui-sb__time">9:41</span>
+            <svg width="66" height="12" viewBox="0 0 66 12" fill="none" aria-hidden="true">
+              <g fill="currentColor"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="6" width="3" height="6" rx="1"/><rect x="10" y="4" width="3" height="8" rx="1"/><rect x="15" y="2" width="3" height="10" rx="1"/></g>
+              <path d="M27 3.2c2.6-2 6.6-2 9.2 0M29 6.2c1.6-1.2 3.6-1.2 5.2 0" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+              <circle cx="31.6" cy="9" r="1.1" fill="currentColor"/>
+              <rect x="44" y="3" width="18" height="7" rx="2" stroke="currentColor" stroke-width="1.2" fill="none" opacity=".45"/>
+              <rect x="45.6" y="4.6" width="12" height="3.8" rx="1" fill="currentColor"/>
+              <path d="M63.4 5.4v2.2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" opacity=".45"/>
+            </svg>
+          </div>
+          <div class="ui-capture">
+            <div class="ui-capture__close">
+              <svg class="ui-icon" viewBox="0 0 20 20" fill="none"><path d="M5 5l10 10M15 5 5 15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            </div>
+            <div class="ui-viewfinder">
+              <span class="ui-viewfinder__mark ui-viewfinder__mark--tl"></span>
+              <span class="ui-viewfinder__mark ui-viewfinder__mark--tr"></span>
+              <span class="ui-viewfinder__mark ui-viewfinder__mark--bl"></span>
+              <span class="ui-viewfinder__mark ui-viewfinder__mark--br"></span>
+              <svg class="ui-icon" style="width: 34px; height: 34px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5A2.5 2.5 0 0 1 5.5 6h1.7a1 1 0 0 0 .8-.4l.9-1.2a1 1 0 0 1 .8-.4h4.6a1 1 0 0 1 .8.4l.9 1.2a1 1 0 0 0 .8.4h1.7A2.5 2.5 0 0 1 21 8.5v8A2.5 2.5 0 0 1 18.5 19h-13A2.5 2.5 0 0 1 3 16.5z"/><circle cx="12" cy="12.5" r="3.6"/></svg>
+              相机实时预览（311 × 411 取景框）
+            </div>
+            <div class="ui-capture__hint">把小票放进框里，光线亮一点</div>
+            <div class="ui-capture__actions">
+              <div class="ui-action">
+                <span class="ui-action__box">
+                  <svg class="ui-icon" viewBox="0 0 20 20" fill="none"><rect x="2.5" y="4" width="15" height="12" rx="2.5" stroke="currentColor" stroke-width="1.5"/><circle cx="7" cy="8.5" r="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M3.5 14.5 8 10.5l3 2.5 2.5-2 3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </span>
+                <span>相册</span>
+              </div>
+              <div>
+                <div class="ui-shutter"><div class="ui-shutter__core"></div></div>
+                <div class="ui-shutter__lbl" style="text-align: center;">快门 144rpx</div>
+              </div>
+              <div class="ui-action">
+                <span class="ui-action__box">
+                  <svg class="ui-icon" viewBox="0 0 20 20" fill="none"><rect x="2.5" y="4.5" width="15" height="11" rx="2.5" stroke="currentColor" stroke-width="1.5"/><path d="M6 8h8M6 11h5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                </span>
+                <span>手输</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── 确认卡（识别完成） ──────────────────────────────────────── -->
+      <div class="shot">
+        <div class="shot__cap"><span class="shot__name">确认卡（识别完成 · 降级）</span><span class="shot__spec">UI_SPEC §5.3 · ConfirmCard</span></div>
+        <div class="phone">
+          <div class="ui-sb">
+            <span class="ui-sb__time">9:41</span>
+            <svg width="66" height="12" viewBox="0 0 66 12" fill="none" aria-hidden="true">
+              <g fill="currentColor"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="6" width="3" height="6" rx="1"/><rect x="10" y="4" width="3" height="8" rx="1"/><rect x="15" y="2" width="3" height="10" rx="1"/></g>
+              <path d="M27 3.2c2.6-2 6.6-2 9.2 0M29 6.2c1.6-1.2 3.6-1.2 5.2 0" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+              <circle cx="31.6" cy="9" r="1.1" fill="currentColor"/>
+              <rect x="44" y="3" width="18" height="7" rx="2" stroke="currentColor" stroke-width="1.2" fill="none" opacity=".45"/>
+              <rect x="45.6" y="4.6" width="12" height="3.8" rx="1" fill="currentColor"/>
+              <path d="M63.4 5.4v2.2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" opacity=".45"/>
+            </svg>
+          </div>
+          <div class="ui-body ui-body--plain">
+            <div style="position: absolute; inset: 0; background-color: var(--color-bg-mask);"></div>
+            <div class="ui-sheet">
+              <div class="ui-banner ui-banner--warn">
+                <svg class="ui-icon" style="width: 14px; height: 14px;" viewBox="0 0 20 20" fill="none"><path d="M10 2.5 18 17H2z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M10 8v4M10 14.2v.6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+                自动识别不完全准，请确认金额与分类
+              </div>
+              <div class="ui-confirm">
+                <div class="ui-thumb">小票<br />缩略图</div>
+                <div class="ui-confirm__fields">
+                  <div class="ui-field ui-field--amount ui-num"><span class="ui-field__cur">¥</span>38.50</div>
+                  <div class="ui-field">肯德基</div>
+                  <div class="ui-field">
+                    餐饮
+                    <svg class="ui-chev" viewBox="0 0 12 12" fill="none"><path d="M2.5 4.5 6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    <span style="margin-left: var(--sp-2);">今天 12:30</span>
+                  </div>
+                  <div class="ui-field ui-field--empty">备注…</div>
+                </div>
+              </div>
+              <div class="ui-confirm__actions">
+                <span class="ui-btn ui-btn--lg ui-btn--ghost">重拍</span>
+                <span class="ui-btn ui-btn--lg ui-btn--primary">确认保存</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── 统计 ────────────────────────────────────────────────────── -->
+      <div class="shot">
+        <div class="shot__cap"><span class="shot__name">统计</span><span class="shot__spec">UI_SPEC §5.4 · 分包 + 预下载</span></div>
+        <div class="phone">
+          <div class="ui-sb">
+            <span class="ui-sb__time">9:41</span>
+            <svg width="66" height="12" viewBox="0 0 66 12" fill="none" aria-hidden="true">
+              <g fill="currentColor"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="6" width="3" height="6" rx="1"/><rect x="10" y="4" width="3" height="8" rx="1"/><rect x="15" y="2" width="3" height="10" rx="1"/></g>
+              <path d="M27 3.2c2.6-2 6.6-2 9.2 0M29 6.2c1.6-1.2 3.6-1.2 5.2 0" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+              <circle cx="31.6" cy="9" r="1.1" fill="currentColor"/>
+              <rect x="44" y="3" width="18" height="7" rx="2" stroke="currentColor" stroke-width="1.2" fill="none" opacity=".45"/>
+              <rect x="45.6" y="4.6" width="12" height="3.8" rx="1" fill="currentColor"/>
+              <path d="M63.4 5.4v2.2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" opacity=".45"/>
+            </svg>
+          </div>
+          <div class="ui-nav">
+            <span class="ui-nav__title">2026年9月
+              <svg class="ui-chev" viewBox="0 0 12 12" fill="none" style="display: inline-block; vertical-align: 1px;"><path d="M2.5 4.5 6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </span>
+          </div>
+          <div class="ui-body">
+            <div class="ui-scroll">
+              <div class="ui-card ui-ring">
+                <div class="ui-ring__chart">
+                  <svg width="200" height="200" viewBox="0 0 200 200">
+                    <circle cx="100" cy="100" r="70" fill="none" stroke="var(--color-bg-subtle)" stroke-width="20" />
+                    <circle cx="100" cy="100" r="70" fill="none" stroke="var(--color-chart-c1)" stroke-width="20" stroke-dasharray="146.52 439.82" stroke-dashoffset="0" />
+                    <circle cx="100" cy="100" r="70" fill="none" stroke="var(--color-chart-c2)" stroke-width="20" stroke-dasharray="70.98 439.82" stroke-dashoffset="-146.52" />
+                    <circle cx="100" cy="100" r="70" fill="none" stroke="var(--color-chart-c3)" stroke-width="20" stroke-dasharray="61.82 439.82" stroke-dashoffset="-217.5" />
+                    <circle cx="100" cy="100" r="70" fill="none" stroke="var(--color-chart-c4)" stroke-width="20" stroke-dasharray="52.89 439.82" stroke-dashoffset="-279.32" />
+                    <circle cx="100" cy="100" r="70" fill="none" stroke="var(--color-chart-c5)" stroke-width="20" stroke-dasharray="107.61 439.82" stroke-dashoffset="-332.21" />
+                  </svg>
+                  <div class="ui-ring__center">
+                    <span class="ui-ring__total ui-num">¥3,842</span>
+                    <span class="ui-ring__label">本月支出</span>
+                  </div>
+                </div>
+                <div class="ui-ring__foot">
+                  <span>日均 ¥128</span>
+                  <span class="ui-ring__delta">较上月 ↓ 12.4%</span>
+                </div>
+              </div>
+
+              <div class="ui-detail">
+                <div class="ui-group__title" style="margin-bottom: var(--sp-2);">分类明细</div>
+                <div class="ui-detail__row">
+                  <span class="ui-dot" style="background-color: var(--color-chart-c1);"></span>
+                  <div style="flex: 1; min-width: 0;">
+                    <div class="ui-overview__line"><span class="ui-overview__name">餐饮</span><span class="ui-overview__amt ui-num">¥1,280</span><span class="ui-overview__pct ui-num">33%</span></div>
+                    <div class="ui-bar"><div class="ui-bar__fill" style="width: 33%; background-color: var(--color-chart-c1);"></div></div>
+                  </div>
+                  <span class="ui-overview__pct ui-num" style="width: 30px;">12笔</span>
+                </div>
+                <div class="ui-detail__row">
+                  <span class="ui-dot" style="background-color: var(--color-chart-c2);"></span>
+                  <div style="flex: 1; min-width: 0;">
+                    <div class="ui-overview__line"><span class="ui-overview__name">交通</span><span class="ui-overview__amt ui-num">¥620</span><span class="ui-overview__pct ui-num">16%</span></div>
+                    <div class="ui-bar"><div class="ui-bar__fill" style="width: 16%; background-color: var(--color-chart-c2);"></div></div>
+                  </div>
+                  <span class="ui-overview__pct ui-num" style="width: 30px;">8笔</span>
+                </div>
+                <div class="ui-detail__row">
+                  <span class="ui-dot" style="background-color: var(--color-chart-c3);"></span>
+                  <div style="flex: 1; min-width: 0;">
+                    <div class="ui-overview__line"><span class="ui-overview__name">购物</span><span class="ui-overview__amt ui-num">¥540</span><span class="ui-overview__pct ui-num">14%</span></div>
+                    <div class="ui-bar"><div class="ui-bar__fill" style="width: 14%; background-color: var(--color-chart-c3);"></div></div>
+                  </div>
+                  <span class="ui-overview__pct ui-num" style="width: 30px;">5笔</span>
+                </div>
+                <div class="ui-detail__row">
+                  <span class="ui-dot" style="background-color: var(--color-chart-c4);"></span>
+                  <div style="flex: 1; min-width: 0;">
+                    <div class="ui-overview__line"><span class="ui-overview__name">日用</span><span class="ui-overview__amt ui-num">¥462</span><span class="ui-overview__pct ui-num">12%</span></div>
+                    <div class="ui-bar"><div class="ui-bar__fill" style="width: 12%; background-color: var(--color-chart-c4);"></div></div>
+                  </div>
+                  <span class="ui-overview__pct ui-num" style="width: 30px;">6笔</span>
+                </div>
+                <div class="ui-detail__row">
+                  <span class="ui-dot" style="background-color: var(--color-chart-c5);"></span>
+                  <div style="flex: 1; min-width: 0;">
+                    <div class="ui-overview__line"><span class="ui-overview__name">其他</span><span class="ui-overview__amt ui-num">¥940</span><span class="ui-overview__pct ui-num">25%</span></div>
+                    <div class="ui-bar"><div class="ui-bar__fill" style="width: 25%; background-color: var(--color-chart-c5);"></div></div>
+                  </div>
+                  <span class="ui-overview__pct ui-num" style="width: 30px;">9笔</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="ui-tabbar">
+            <div class="ui-tab">
+              <svg class="ui-icon" viewBox="0 0 20 20" fill="none"><rect x="2.2" y="2.2" width="15.6" height="15.6" rx="5" stroke="currentColor" stroke-width="1.6"/><circle cx="10" cy="10" r="2.6" fill="currentColor"/></svg>
+              <span>首页</span>
+            </div>
+            <div class="ui-tab ui-tab--on">
+              <svg class="ui-icon" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7.8" stroke="currentColor" stroke-width="1.6"/><path d="M10 2.2v7.8l5.5 3.2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+              <span>统计</span>
+            </div>
+            <div class="ui-tab">
+              <svg class="ui-icon" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="7" r="3.4" stroke="currentColor" stroke-width="1.6"/><path d="M3.6 17.2c0-3.5 2.9-6 6.4-6s6.4 2.5 6.4 6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+              <span>我的</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── 账单详情 ────────────────────────────────────────────────── -->
+      <div class="shot">
+        <div class="shot__cap"><span class="shot__name">账单详情</span><span class="shot__spec">UI_SPEC §5.5 · 分包 · 返回 + 更多</span></div>
+        <div class="phone">
+          <div class="ui-sb">
+            <span class="ui-sb__time">9:41</span>
+            <svg width="66" height="12" viewBox="0 0 66 12" fill="none" aria-hidden="true">
+              <g fill="currentColor"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="6" width="3" height="6" rx="1"/><rect x="10" y="4" width="3" height="8" rx="1"/><rect x="15" y="2" width="3" height="10" rx="1"/></g>
+              <path d="M27 3.2c2.6-2 6.6-2 9.2 0M29 6.2c1.6-1.2 3.6-1.2 5.2 0" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+              <circle cx="31.6" cy="9" r="1.1" fill="currentColor"/>
+              <rect x="44" y="3" width="18" height="7" rx="2" stroke="currentColor" stroke-width="1.2" fill="none" opacity=".45"/>
+              <rect x="45.6" y="4.6" width="12" height="3.8" rx="1" fill="currentColor"/>
+              <path d="M63.4 5.4v2.2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" opacity=".45"/>
+            </svg>
+          </div>
+          <div class="ui-nav">
+            <svg class="ui-icon" viewBox="0 0 20 20" fill="none"><path d="M12 4 6 10l6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <svg class="ui-icon" viewBox="0 0 20 20" fill="none"><circle cx="4" cy="10" r="1.5" fill="currentColor"/><circle cx="10" cy="10" r="1.5" fill="currentColor"/><circle cx="16" cy="10" r="1.5" fill="currentColor"/></svg>
+          </div>
+          <div class="ui-body">
+            <div class="ui-scroll">
+              <div class="ui-receipt">
+                <svg class="ui-icon" style="width: 30px; height: 30px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M6 3h12v18l-2-1.6-2 1.6-2-1.6-2 1.6-2-1.6L6 21z" stroke-linejoin="round"/><path d="M9 8h6M9 12h6M9 16h3" stroke-linecap="round"/></svg>
+                小票原图（点击放大预览）
+              </div>
+
+              <div class="ui-rows ui-card" style="padding: 0 var(--sp-4);">
+                <div class="ui-row"><span class="ui-row__label">金额</span><span class="ui-row__value ui-num">¥ 38.50</span></div>
+                <div class="ui-row"><span class="ui-row__label">类型</span><span class="ui-row__value" style="display: flex; align-items: center; gap: var(--sp-1);">支出
+                  <svg class="ui-chev" viewBox="0 0 12 12" fill="none"><path d="M2.5 4.5 6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </span></div>
+                <div class="ui-row"><span class="ui-row__label">分类</span><span class="ui-row__value" style="display: flex; align-items: center; gap: var(--sp-2);">
+                  <span class="ui-avatar ui-avatar--sm ui-avatar--c1" style="width: 22px; height: 22px; font-size: 10px;">餐</span>餐饮
+                  <svg class="ui-chev" viewBox="0 0 12 12" fill="none"><path d="M2.5 4.5 6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </span></div>
+                <div class="ui-row"><span class="ui-row__label">商家</span><span class="ui-row__value">肯德基</span></div>
+                <div class="ui-row"><span class="ui-row__label">时间</span><span class="ui-row__value">今天 12:30</span></div>
+                <div class="ui-row"><span class="ui-row__label">备注</span><span class="ui-row__value ui-row__value--ph">点击填写</span></div>
+              </div>
+
+              <div class="ui-meta">
+                识别信息
+                <span style="margin-left: auto;">多模态识别 · 置信 0.92</span>
+                <svg class="ui-chev" viewBox="0 0 12 12" fill="none"><path d="M4.5 2.5 8 6l-3.5 3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+
+              <div class="ui-card ui-card--flat ui-danger-card" style="margin: var(--sp-5) 0 0;">
+                <span style="font-size: var(--fs-body); color: var(--color-danger);">删除这笔账单</span>
+              </div>
+              <div style="margin-top: var(--sp-3); text-align: center; font-size: var(--fs-tiny); color: var(--color-text-tertiary);">
+                修改即保存：字段失焦 / 选择完成即写入本地并进同步队列
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── 我的 ────────────────────────────────────────────────────── -->
+      <div class="shot">
+        <div class="shot__cap"><span class="shot__name">我的</span><span class="shot__spec">UI_SPEC §5.6 · 主包</span></div>
+        <div class="phone">
+          <div class="ui-sb">
+            <span class="ui-sb__time">9:41</span>
+            <svg width="66" height="12" viewBox="0 0 66 12" fill="none" aria-hidden="true">
+              <g fill="currentColor"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="6" width="3" height="6" rx="1"/><rect x="10" y="4" width="3" height="8" rx="1"/><rect x="15" y="2" width="3" height="10" rx="1"/></g>
+              <path d="M27 3.2c2.6-2 6.6-2 9.2 0M29 6.2c1.6-1.2 3.6-1.2 5.2 0" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+              <circle cx="31.6" cy="9" r="1.1" fill="currentColor"/>
+              <rect x="44" y="3" width="18" height="7" rx="2" stroke="currentColor" stroke-width="1.2" fill="none" opacity=".45"/>
+              <rect x="45.6" y="4.6" width="12" height="3.8" rx="1" fill="currentColor"/>
+              <path d="M63.4 5.4v2.2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" opacity=".45"/>
+            </svg>
+          </div>
+          <div class="ui-nav"><span class="ui-nav__title">我的</span></div>
+          <div class="ui-body">
+            <div class="ui-scroll">
+              <div class="ui-card ui-pcard">
+                <span class="ui-avatar ui-avatar--sm ui-pcard__avatar">
+                  <svg class="ui-icon" style="width: 24px; height: 24px; color: var(--color-text-tertiary);" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="7" r="3.4" stroke="currentColor" stroke-width="1.5"/><path d="M3.6 17.2c0-3.5 2.9-6 6.4-6s6.4 2.5 6.4 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                </span>
+                <div class="ui-item__main">
+                  <div class="ui-item__name">记账小能手</div>
+                  <div class="ui-item__sub">已记账 128 笔 · 92 天</div>
+                </div>
+              </div>
+
+              <div class="ui-group__title" style="margin-top: var(--sp-5);">数据</div>
+              <div class="ui-card" style="padding: 0 var(--sp-4);">
+                <div class="ui-row">
+                  <span class="ui-row__label" style="width: auto; flex: 1; color: var(--color-text-primary);">每日记账提醒</span>
+                  <span class="ui-switch ui-switch--on"><span class="ui-switch__knob"></span></span>
+                </div>
+                <div class="ui-row">
+                  <span class="ui-row__label" style="width: auto; flex: 1; color: var(--color-text-primary);">数据同步</span>
+                  <span class="ui-row__value" style="color: var(--color-success);">已同步</span>
+                </div>
+                <div class="ui-row">
+                  <span class="ui-row__label" style="width: auto; flex: 1; color: var(--color-text-primary);">清理本地缓存</span>
+                  <span class="ui-row__value ui-row__value--ph ui-num">12.4MB</span>
+                </div>
+              </div>
+
+              <div class="ui-group__title" style="margin-top: var(--sp-5);">隐私与关于</div>
+              <div class="ui-card" style="padding: 0 var(--sp-4);">
+                <div class="ui-row">
+                  <span class="ui-row__label" style="width: auto; flex: 1; color: var(--color-text-primary);">隐私保护指引</span>
+                  <svg class="ui-chev" viewBox="0 0 12 12" fill="none"><path d="M4.5 2.5 8 6l-3.5 3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+                <div class="ui-row">
+                  <span class="ui-row__label" style="width: auto; flex: 1; color: var(--color-text-primary);">性能数据上报</span>
+                  <span class="ui-switch"><span class="ui-switch__knob"></span></span>
+                </div>
+                <div class="ui-row">
+                  <span class="ui-row__label" style="width: auto; flex: 1; color: var(--color-text-primary);">版本号</span>
+                  <span class="ui-row__value ui-row__value--ph">v1.0.0 · 连点 5 次进开发面板</span>
+                </div>
+              </div>
+
+              <div style="margin-top: var(--sp-6); text-align: center; font-size: var(--fs-tiny); color: var(--color-text-tertiary);">
+                H5 端此处为「本机用户」+ 可选绑定手机号入口
+              </div>
+            </div>
+          </div>
+          <div class="ui-tabbar">
+            <div class="ui-tab">
+              <svg class="ui-icon" viewBox="0 0 20 20" fill="none"><rect x="2.2" y="2.2" width="15.6" height="15.6" rx="5" stroke="currentColor" stroke-width="1.6"/><circle cx="10" cy="10" r="2.6" fill="currentColor"/></svg>
+              <span>首页</span>
+            </div>
+            <div class="ui-tab">
+              <svg class="ui-icon" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7.8" stroke="currentColor" stroke-width="1.6"/><path d="M10 2.2v7.8l5.5 3.2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+              <span>统计</span>
+            </div>
+            <div class="ui-tab ui-tab--on">
+              <svg class="ui-icon" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="7" r="3.4" stroke="currentColor" stroke-width="1.6"/><path d="M3.6 17.2c0-3.5 2.9-6 6.4-6s6.4 2.5 6.4 6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+              <span>我的</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       04 关键状态
+       ═══════════════════════════════════════════════════════════════════ -->
+  <section class="doc-section">
+    <div class="doc-section__head">
+      <span class="doc-section__no">04</span>
+      <h2 class="doc-section__title">关键状态（四态齐全才叫做完）</h2>
+      <span class="doc-section__note">UI_SPEC §5.2 / §6</span>
+    </div>
+
+    <div class="shots">
+
+      <!-- 加载中 -->
+      <div class="shot">
+        <div class="shot__cap"><span class="shot__name">首页 · 加载中</span><span class="shot__spec">骨架屏 · 超过 300ms 才出现</span></div>
+        <div class="phone">
+          <div class="ui-sb">
+            <span class="ui-sb__time">9:41</span>
+            <svg width="66" height="12" viewBox="0 0 66 12" fill="none" aria-hidden="true">
+              <g fill="currentColor"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="6" width="3" height="6" rx="1"/><rect x="10" y="4" width="3" height="8" rx="1"/><rect x="15" y="2" width="3" height="10" rx="1"/></g>
+              <path d="M27 3.2c2.6-2 6.6-2 9.2 0M29 6.2c1.6-1.2 3.6-1.2 5.2 0" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+              <circle cx="31.6" cy="9" r="1.1" fill="currentColor"/>
+              <rect x="44" y="3" width="18" height="7" rx="2" stroke="currentColor" stroke-width="1.2" fill="none" opacity=".45"/>
+              <rect x="45.6" y="4.6" width="12" height="3.8" rx="1" fill="currentColor"/>
+              <path d="M63.4 5.4v2.2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" opacity=".45"/>
+            </svg>
+          </div>
+          <div class="ui-body">
+            <div class="ui-scroll">
+              <div style="padding-top: var(--sp-3);">
+                <div class="ui-sk" style="height: 24px; width: 76px;"></div>
+                <div class="ui-sk" style="height: 39px; width: 62%; margin-top: var(--sp-5);"></div>
+                <div class="ui-sk" style="height: 16px; width: 34%; margin-top: var(--sp-3);"></div>
+                <div class="ui-sk ui-sk--block" style="height: 132px; margin-top: var(--sp-5);"></div>
+                <div class="doc-row" style="margin-top: var(--sp-5); gap: var(--sp-2);">
+                  <div class="ui-sk" style="height: 26px; width: 56px; border-radius: var(--r-full);"></div>
+                  <div class="ui-sk" style="height: 26px; width: 56px; border-radius: var(--r-full);"></div>
+                  <div class="ui-sk" style="height: 26px; width: 56px; border-radius: var(--r-full);"></div>
+                </div>
+                <div style="margin-top: var(--sp-5);">
+                  <div class="ui-item">
+                    <div class="ui-sk" style="width: 40px; height: 40px; border-radius: var(--r-full);"></div>
+                    <div class="ui-item__main"><div class="ui-sk" style="height: 14px; width: 44%;"></div><div class="ui-sk" style="height: 12px; width: 62%; margin-top: var(--sp-2);"></div></div>
+                    <div class="ui-sk" style="height: 14px; width: 54px;"></div>
+                  </div>
+                  <div class="ui-item">
+                    <div class="ui-sk" style="width: 40px; height: 40px; border-radius: var(--r-full);"></div>
+                    <div class="ui-item__main"><div class="ui-sk" style="height: 14px; width: 38%;"></div><div class="ui-sk" style="height: 12px; width: 56%; margin-top: var(--sp-2);"></div></div>
+                    <div class="ui-sk" style="height: 14px; width: 48px;"></div>
+                  </div>
+                  <div class="ui-item">
+                    <div class="ui-sk" style="width: 40px; height: 40px; border-radius: var(--r-full);"></div>
+                    <div class="ui-item__main"><div class="ui-sk" style="height: 14px; width: 48%;"></div><div class="ui-sk" style="height: 12px; width: 52%; margin-top: var(--sp-2);"></div></div>
+                    <div class="ui-sk" style="height: 14px; width: 60px;"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="ui-tabbar">
+            <div class="ui-tab ui-tab--on">
+              <svg class="ui-icon" viewBox="0 0 20 20" fill="none"><rect x="2.2" y="2.2" width="15.6" height="15.6" rx="5" stroke="currentColor" stroke-width="1.6"/><circle cx="10" cy="10" r="2.6" fill="currentColor"/></svg>
+              <span>首页</span>
+            </div>
+            <div class="ui-tab">
+              <svg class="ui-icon" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7.8" stroke="currentColor" stroke-width="1.6"/><path d="M10 2.2v7.8l5.5 3.2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+              <span>统计</span>
+            </div>
+            <div class="ui-tab">
+              <svg class="ui-icon" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="7" r="3.4" stroke="currentColor" stroke-width="1.6"/><path d="M3.6 17.2c0-3.5 2.9-6 6.4-6s6.4 2.5 6.4 6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+              <span>我的</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 空态 -->
+      <div class="shot">
+        <div class="shot__cap"><span class="shot__name">首页 · 空态</span><span class="shot__spec">说明现状 + 给出下一步动作</span></div>
+        <div class="phone">
+          <div class="ui-sb">
+            <span class="ui-sb__time">9:41</span>
+            <svg width="66" height="12" viewBox="0 0 66 12" fill="none" aria-hidden="true">
+              <g fill="currentColor"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="6" width="3" height="6" rx="1"/><rect x="10" y="4" width="3" height="8" rx="1"/><rect x="15" y="2" width="3" height="10" rx="1"/></g>
+              <path d="M27 3.2c2.6-2 6.6-2 9.2 0M29 6.2c1.6-1.2 3.6-1.2 5.2 0" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+              <circle cx="31.6" cy="9" r="1.1" fill="currentColor"/>
+              <rect x="44" y="3" width="18" height="7" rx="2" stroke="currentColor" stroke-width="1.2" fill="none" opacity=".45"/>
+              <rect x="45.6" y="4.6" width="12" height="3.8" rx="1" fill="currentColor"/>
+              <path d="M63.4 5.4v2.2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" opacity=".45"/>
+            </svg>
+          </div>
+          <div class="ui-body">
+            <div class="ui-scroll">
+              <div class="ui-month">9月
+                <svg class="ui-chev" viewBox="0 0 12 12" fill="none" style="margin: 0;"><path d="M2.5 4.5 6 8l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+              <div class="ui-hero">
+                <div class="ui-hero__num ui-num" style="color: var(--color-text-tertiary);">¥ 0.00</div>
+                <div class="ui-hero__delta">本月还没有任何记录</div>
+              </div>
+
+              <div class="ui-empty" style="padding-top: var(--sp-8);">
+                <svg width="96" height="96" viewBox="0 0 96 96" fill="none">
+                  <rect x="26" y="14" width="44" height="62" rx="8" stroke="var(--color-line-strong)" stroke-width="2"/>
+                  <path d="M36 32h24M36 44h24M36 56h14" stroke="var(--color-line-strong)" stroke-width="2" stroke-linecap="round"/>
+                  <circle cx="66" cy="66" r="17" fill="var(--color-accent-soft)"/>
+                  <path d="M58 66h16M66 58v16" stroke="var(--color-accent)" stroke-width="2.4" stroke-linecap="round"/>
+                </svg>
+                <div>
+                  <div class="ui-item__name" style="font-size: var(--fs-h2); font-weight: var(--font-weight-medium);">还没有账单</div>
+                  <div class="ui-empty__text" style="margin-top: var(--sp-1);">拍一张小票，一拍记会自动识别金额与分类</div>
+                </div>
+                <span class="ui-btn ui-btn--lg ui-btn--primary">拍一张开始记账</span>
+              </div>
+            </div>
+          </div>
+          <div class="ui-tabbar">
+            <div class="ui-tab ui-tab--on">
+              <svg class="ui-icon" viewBox="0 0 20 20" fill="none"><rect x="2.2" y="2.2" width="15.6" height="15.6" rx="5" stroke="currentColor" stroke-width="1.6"/><circle cx="10" cy="10" r="2.6" fill="currentColor"/></svg>
+              <span>首页</span>
+            </div>
+            <div class="ui-tab">
+              <svg class="ui-icon" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7.8" stroke="currentColor" stroke-width="1.6"/><path d="M10 2.2v7.8l5.5 3.2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+              <span>统计</span>
+            </div>
+            <div class="ui-tab">
+              <svg class="ui-icon" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="7" r="3.4" stroke="currentColor" stroke-width="1.6"/><path d="M3.6 17.2c0-3.5 2.9-6 6.4-6s6.4 2.5 6.4 6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+              <span>我的</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 离线 + 同步失败 -->
+      <div class="shot">
+        <div class="shot__cap"><span class="shot__name">首页 · 离线 + 同步失败</span><span class="shot__spec">离线记账不阻塞 · 失败可重试</span></div>
+        <div class="phone">
+          <div class="ui-sb">
+            <span class="ui-sb__time">9:41</span>
+            <svg width="66" height="12" viewBox="0 0 66 12" fill="none" aria-hidden="true">
+              <g fill="currentColor"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="6" width="3" height="6" rx="1"/><rect x="10" y="4" width="3" height="8" rx="1"/><rect x="15" y="2" width="3" height="10" rx="1"/></g>
+              <path d="M27 3.2c2.6-2 6.6-2 9.2 0M29 6.2c1.6-1.2 3.6-1.2 5.2 0" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+              <circle cx="31.6" cy="9" r="1.1" fill="currentColor"/>
+              <rect x="44" y="3" width="18" height="7" rx="2" stroke="currentColor" stroke-width="1.2" fill="none" opacity=".45"/>
+              <rect x="45.6" y="4.6" width="12" height="3.8" rx="1" fill="currentColor"/>
+              <path d="M63.4 5.4v2.2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" opacity=".45"/>
+            </svg>
+          </div>
+          <div class="ui-body">
+            <div class="ui-scroll">
+              <div class="ui-offline" style="margin: 0 calc(var(--sp-4) * -1); width: auto;">
+                <span class="ui-dot" style="width: 6px; height: 6px; background-color: currentColor;"></span>
+                当前无网络，记账会先存在本地
+              </div>
+              <div class="ui-hero" style="margin-top: var(--sp-5);">
+                <div class="ui-hero__num ui-num">¥ 3,842.50</div>
+                <div class="ui-hero__delta">较上月 12.4%</div>
+              </div>
+
+              <div class="ui-group" style="margin-top: var(--sp-5);">
+                <div class="ui-group__title">刚才</div>
+                <div class="ui-item">
+                  <span class="ui-avatar ui-avatar--c2">交</span>
+                  <div class="ui-item__main"><div class="ui-item__name">交通</div><div class="ui-item__sub">出租车 · 21:14</div></div>
+                  <div class="ui-item__right"><div class="ui-item__amt ui-num">¥46.00</div><div class="ui-badge ui-badge--pending"><span class="ui-dot"></span>待同步</div></div>
+                </div>
+                <div class="ui-item">
+                  <span class="ui-avatar ui-avatar--c1">餐</span>
+                  <div class="ui-item__main"><div class="ui-item__name">餐饮</div><div class="ui-item__sub">便利店 · 20:02</div></div>
+                  <div class="ui-item__right"><div class="ui-item__amt ui-num">¥18.90</div><div class="ui-badge ui-badge--pending"><span class="ui-dot"></span>待同步</div></div>
+                </div>
+                <div class="ui-item">
+                  <span class="ui-avatar ui-avatar--c4">日</span>
+                  <div class="ui-item__main"><div class="ui-item__name">日用</div><div class="ui-item__sub">超市 · 18:47</div></div>
+                  <div class="ui-item__right">
+                    <div class="ui-item__amt ui-num" style="color: var(--color-text-tertiary);">¥72.30</div>
+                    <div class="ui-badge ui-badge--failed"><span class="ui-dot"></span>失败 · 重试</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="ui-card ui-card--pad" style="margin-top: var(--sp-5); display: flex; gap: var(--sp-3); align-items: center;">
+                <svg class="ui-icon" style="color: var(--color-info);" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.5"/><path d="M10 6.5v5M10 13.8v.6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+                <div style="font-size: var(--fs-caption); color: var(--color-text-secondary);">3 笔待同步，网络恢复后自动重试（指数退避，最多 5 次）</div>
+              </div>
+            </div>
+
+            <div class="ui-fab">
+              <svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5A2.5 2.5 0 0 1 5.5 6h1.7a1 1 0 0 0 .8-.4l.9-1.2a1 1 0 0 1 .8-.4h4.6a1 1 0 0 1 .8.4l.9 1.2a1 1 0 0 0 .8.4h1.7A2.5 2.5 0 0 1 21 8.5v8A2.5 2.5 0 0 1 18.5 19h-13A2.5 2.5 0 0 1 3 16.5z"/><circle cx="12" cy="12.5" r="3.6"/></svg>
+            </div>
+          </div>
+          <div class="ui-tabbar">
+            <div class="ui-tab ui-tab--on">
+              <svg class="ui-icon" viewBox="0 0 20 20" fill="none"><rect x="2.2" y="2.2" width="15.6" height="15.6" rx="5" stroke="currentColor" stroke-width="1.6"/><circle cx="10" cy="10" r="2.6" fill="currentColor"/></svg>
+              <span>首页</span>
+            </div>
+            <div class="ui-tab">
+              <svg class="ui-icon" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7.8" stroke="currentColor" stroke-width="1.6"/><path d="M10 2.2v7.8l5.5 3.2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+              <span>统计</span>
+            </div>
+            <div class="ui-tab">
+              <svg class="ui-icon" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="7" r="3.4" stroke="currentColor" stroke-width="1.6"/><path d="M3.6 17.2c0-3.5 2.9-6 6.4-6s6.4 2.5 6.4 6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+              <span>我的</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       05 评审要点
+       ═══════════════════════════════════════════════════════════════════ -->
+  <section class="doc-section">
+    <div class="doc-section__head">
+      <span class="doc-section__no">05</span>
+      <h2 class="doc-section__title">评审要点：这 8 处最值得先看</h2>
+      <span class="doc-section__note">看效果图时的自检清单</span>
+    </div>
+    <div class="doc-notes">
+      <ol>
+        <li><b>一屏是否只有一个强调色？</b>首页里紫罗兰只应出现在 FAB、「全部」选中态、tabBar 当前项 —— 若你发现紫色到处都是，说明强调失效。</li>
+        <li><b>层级是不是靠留白撑起来的？</b>把页面缩到 50% 眯眼看：如果还能分清「总支出 → 分类速览 → 筛选 → 流水」，说明层级成立；否则先调间距，别急着加分割线。</li>
+        <li><b>金额对不对齐？</b>所有金额已用 tabular-nums（等宽数字）。列表右边缘应是一条直线 —— 这是记账类产品的专业度基线。</li>
+        <li><b>近白 #FAFAFC 是否够清爽？</b>底色比纯白压冷一档，白卡才能自然浮起（这就是投影能做得很轻的前提）。若你觉得底太「灰」，说明压过头了，可让 token 往 #FCFCFE 提一档（改 tokens.json 后重跑本页即可看到）。</li>
+        <li><b>分类色是否 5 色可分辨？</b>紫罗兰 / 青绿 / 琥珀 / 玫瑰 / 雾蓝 —— 色相拉得开，缩到 8px 圆点仍能区分。注意 chart-c1 与 accent 是同一个色，环图首段会与主色同频。</li>
+        <li><b>「环比下降」用绿色是否讲得通？</b>支出下降＝好消息，用 success 青绿成立；但这与「涨红跌绿」的股票惯例相反，若面向投资类场景需重新约定。</li>
+        <li><b>空态有没有出路？</b>空态三件套是「插画 + 一句说明 + 一个主操作」，而不是一句「暂无数据」。已按此写。</li>
+        <li><b>失败态有没有重试？</b>同步失败项上必须能直接点重试，不能只显示「失败」。当前用「失败 · 重试」红点表示。</li>
+      </ol>
+    </div>
+  </section>
+
+  <footer class="doc-foot">
+    <p style="margin: 0;">
+      本页由 <code>scripts/gen-preview.mjs</code> 从 <code>design/preview/template.html</code> +
+      <code>design/tokens/tokens.json</code> 生成，产物自包含、可直接打开或截图存档（
+      <code>design/screenshots/</code>）。
+      产品代码里的对应实现见 <code>docs/DEV_PLAN.md</code> 的 D3（组件层）与 D5–D9（页面）。
+      效果图与真机渲染的三处已知差异：系统字体（本页用系统字体栈近似）、状态栏样式（跟随机型）、动效（本页静态）。
+    </p>
+  </footer>
+
+</div>
+</body>
+</html>

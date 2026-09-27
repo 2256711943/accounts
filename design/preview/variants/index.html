@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8" />
+<title>一拍记 · 视觉方向对比稿</title>
+<style>
+body { margin:0; padding:24px; background:#EDEDEF; color:#1A1A1C;
+  font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif; font-size:14px; }
+h1 { font-size:18px; margin:0 0 6px; }
+.lead { margin:0 0 20px; color:#5C5C66; font-size:13px; line-height:1.6; }
+.cols { display:flex; gap:20px; align-items:flex-start; }
+.col { width:375px; flex:none; }
+.cap { margin-bottom:8px; font-weight:600; }
+.note { min-height:56px; margin-bottom:8px; color:#5C5C66; font-size:12px; line-height:1.6; }
+.chips { display:flex; gap:6px; margin-bottom:8px; }
+.chip { width:22px; height:22px; border-radius:6px; box-shadow:0 0 0 1px rgba(0,0,0,.08) inset; }
+iframe { width:375px; height:860px; border:0; border-radius:14px; background:#fff;
+  box-shadow:0 6px 24px rgba(0,0,0,.12); }
+</style></head><body>
+<h1>一拍记 · 视觉方向对比稿（A / B / C）</h1>
+<p class="lead">三套稿子的<b>版式、间距、信息结构完全一样</b>，差异只在 token（颜色 / 圆角 / 阴影 / 字阶）——所以哪套好看是纯粹的视觉偏好判断。<br>挑一套，或者说「要 A 的底色 + C 的圆角」，我再收敛成最终版并写回 tokens.json。此外这三套都是「配色方向」层面的对比，页面结构若也要改，是下一步的事。</p>
+<div class="cols">
+<div class="col">
+  <div class="cap">方案 A · 冷调专业感（靛蓝 + 冷灰白）</div>
+  <div class="note">冷灰白底 + 靛蓝主色，卡片纯白浮起，双层柔和投影 + 中等圆角。气质克制可信，最像成熟金融产品；风险是「标准答案」，个性偏弱。三套里最保险的一套。</div>
+  <div class="chips">
+    <div class="chip" style="background:#F4F5F7;"></div>
+    <div class="chip" style="background:#FFFFFF;"></div>
+    <div class="chip" style="background:#14181F;"></div>
+    <div class="chip" style="background:#2E5BFF;"></div>
+    <div class="chip" style="background:#E8EEFF;"></div>
+  </div>
+  <iframe src="a-cobalt.html" loading="lazy"></iframe>
+</div>
+<div class="col">
+  <div class="cap">方案 B · 深色高级感（近黑 + 亮橙）</div>
+  <div class="note">近黑底 + 亮橙主色，卡片靠明度差浮起，圆角最大、投影最深。深色天然有纵深感，「素/平」的问题解决得最彻底，也最显贵。代价：白天户外可读性最差，屏幕亮度敏感的机型上偏暗；后续每个页面都要按深色重新校一遍对比度。</div>
+  <div class="chips">
+    <div class="chip" style="background:#16171B;"></div>
+    <div class="chip" style="background:#1F2126;"></div>
+    <div class="chip" style="background:#F3F4F6;"></div>
+    <div class="chip" style="background:#FF8A3D;"></div>
+    <div class="chip" style="background:#3A2A1F;"></div>
+  </div>
+  <iframe src="b-noir.html" loading="lazy"></iframe>
+</div>
+<div class="col">
+  <div class="cap">方案 C · 亮白现代感（紫罗兰 + 大圆角）</div>
+  <div class="note">近白底 + 紫罗兰主色，圆角最大、投影最重且带色，字阶落差最大。最年轻、最「产品感」，一眼看上去最不像学生作业。代价：紫蓝系正是 UI_SPEC §1.2 专门避开的 AI 生成设计重灾区，撞脸风险最高。</div>
+  <div class="chips">
+    <div class="chip" style="background:#FAFAFC;"></div>
+    <div class="chip" style="background:#FFFFFF;"></div>
+    <div class="chip" style="background:#17141F;"></div>
+    <div class="chip" style="background:#6C4BFF;"></div>
+    <div class="chip" style="background:#EEE9FF;"></div>
+  </div>
+  <iframe src="c-violet.html" loading="lazy"></iframe>
+</div>
+</div>
+</body></html>
