@@ -1,16 +1,9 @@
 # spec_finish — 已完成工作记录
 
-> 更新时间：2026-09-26 ｜ 对应 `docs/DEV_PLAN.md` 的 **D4（云开发接入，止损点）**
-> 结论：**D4 全部完成——云开发双端跑通，三个业务 action（upsert / list / remove）通过 18 个 Vitest 单测，且真实云端 DoD 已执行通过。**
-> 云端收尾（2026-09-26，走 tcb CLI / node-spawn 通道完成）：
-> - 新建 `ledger_records` 集合成功
-> - 部署 ledger 云函数（本地 D4 完整代码覆盖旧 ping 骨架）
-> - 云函数超时调到 20s（Nodejs16.13 / 256MB）
-> - DoD 验证：upsert create 写入 1 条（`_id ff4bc26…`，`_openid=h5-demo-single-user`，version 1），
->   `record.list` 读回同 1 条、hasMore:false，MCP 只读查库确认落库一致。
-> 新增：项目根 `cloudbaserc.json`（环境+ledger 部署配置，timeout 20，值得入库）。
-> ⚠️ 踩坑记录：本 IDE 的 CloudBase MCP 无管理工具，且 `tcb` 经 PowerShell/npx 调用 JSON 会二次转义；
-> 解法 = 用 Node `spawnSync(process.execPath, [cli.js, ...])` 参数数组直调 CLI standalone 入口（见下）
+> 更新时间：2026-09-27 ｜ 对应 `docs/DEV_PLAN.md` 的 **D5（状态层 + 首页骨架 → 本轮范围：核心首页）**
+> 结论：**D5 核心首页完成并双端跑通**——record Pinia store + format 工具 + 真实首页（hero/三分类/筛选/日期分组/四态/下拉刷新/FAB），type-check / lint / test 三连过，H5 浏览器实测正常渲染、小程序 dev 编译成功。D4 云端收尾见下方历史记录。
+> 本轮新增：`src/utils/format.ts`、`src/stores/record.ts`、`src/adapters/system.ts`，重写 `src/pages/index/index.vue`，`src/pages.json` 首页开下拉刷新。
+> ⚠️ 踩坑记录：H5 先编译、小程序后暴露非法 token——`$sp-24`/`$sp-16`/`$color-border` 均不存在，改为 token 派生计算（`$sp-8*3`）与 `$color-line`；`#ifdef` 误写进页面脚本，已收敛到 `adapters/system.ts`。
 
 ---
 
@@ -264,3 +257,51 @@ D1 占位首页新增「数据通道自检」卡片 + 按钮，用于人肉验�
 ## 6. 可写进简历的一句话
 
 > 统一数据通道抽象：小程序走 `wx.cloud.callFunction`、H5 走云函数 HTTP 访问服务，同一套云函数代码通过入口归一化实现零逻辑重复；平台差异全部收敛在适配层，业务代码零条件编译。
+
+---
+
+## 7. 本次追加：D5 核心首页（2026-09-27）
+
+在 D4 云端收尾基础上，按 `docs/DEV_PLAN.md` 进入 **D5（状态层 + 首页骨架）**，本轮用户选择**核心首页**范围：只做「真实榜单首页 + record store + 四态 + 下拉刷新」。数据走已就绪的 `record.list` 客户端聚合；`stats.monthly` 云函数与顶部金额速览真实数据源留待后续。
+
+### 7.1 前提更正：自研原子组件不存在
+
+设计计划里写「复用 D3 自研组件 `Card`/`Skeleton`/`Empty`/`Tag`/`Avatar`」，但探查确认 `src/components/` **根本不存在**（D3 产出未落地）。故首页 UI **全部用原生 view + Design Token 自写**，未引任何外采除 `wd-loadmore`（easycom 分页脚）以外组件。
+
+### 7.2 新增文件
+
+| 文件 | 作用 |
+|---|---|
+| `src/utils/format.ts` | 纯函数：`fenToYuan`（分→元千分位）、`groupByDay`（今天/昨天/M月D日，sort 字段单调排序）、`monthStartTicks` |
+| `src/stores/record.ts` | Pinia setup store：`list`/`nextCursor`/`hasMore`/`loading`/`loadingMore`/`error`/`categoryId`/`since`/`offline`；`fetch()`/`loadMore()`（游标分页 guard）/`setCategory()`；`NETWORK` → 离线判定 |
+| `src/adapters/system.ts` | `prefersReducedMotion()` 跨端能力（`#ifdef` 合法落点在适配层，遵守架构红线 2） |
+
+### 7.3 改写 / 配置
+
+- `src/pages/index/index.vue`：D1 占位整体替换为真实首页——hero（本月 + 总支出，总支出用列表合计占位并注释待 `stats.monthly`）、前三分类速览（占比条）、分类筛选胶囊（全部/内置分类，切换淡出 120ms → 淡入 200ms，只动 opacity、尊重 `prefers-reduced-motion`）、日期分组列表（112rpx 行高，expense=danger / income=success）、FAB；四态：骨架 / 错误+重试 / 空态+拍照引导 / 离线琥珀顶条；`onPullDownRefresh` + `onReachBottom` 驱动刷新与加载更多。
+- `src/pages.json`：首页加 `enablePullDownRefresh: true` + `backgroundTextStyle: "dark"`。
+
+### 7.4 验证证据（2026-09-27 实测）
+
+- `npm run type-check`：通过（vue-tsc strict）
+- `npm run lint`：eslint + stylelint 全过（含空行/`flex-flow` 简写自动修复）
+- `npm test`：18/18 通过（D4 用例不回归）
+- H5（`dev:h5`，:5173）：浏览器代理实测——首页正常渲染，可见「一拍记/2026 年 9 月/本月支出（元）/0.00/🧾 本月还没有账单/＋」，无任何 console 报错
+- 小程序（`dev:mp-weixin`）：编译 `DONE Build complete`，`dist/dev/mp-weixin/pages/index/` 四件产物齐全
+
+### 7.5 踩坑记录
+
+1. **非法 token**：H5 先编译抢跑，`$sp-24`/`$sp-16`/`$color-border` 均不存在于 `tokens.scss`（尺寸只到 1–8），报 `Undefined variable`（vite:css）。改为 token 派生计算（`padding-bottom: #{$sp-8 * 3}`）与 `$color-line`。
+2. **模板绑定 store 状态**：`loading`/`error` 在模板里须经 `store.` 访问（store 用 setup 语法、状态不自动顶层展开），漏写 `store.` 触发 TS2339，逐一改用 `store.loading`/`store.error`。
+3. **`#ifdef` 误入业务页**：首页脚本里写了 `#ifdef H5` 探测 reduced-motion，属架构红线 2 违规，收敛到 `src/adapters/system.ts`（单文件 + 函数体内条件编译）。
+
+### 7.6 明确不做（后续轮次）
+
+- `stats.monthly` 云函数与顶部金额速览真实数据源（总支出暂用列表合计）
+- `stores/user.ts`、月份切换（本月固定）、左滑删除、FAB 调真实拍照页、store 单测（计划标「可选」，未加）
+
+### 7.7 当前 Git 状态（2026-09-27）
+
+本轮新增未提交：`src/adapters/system.ts`、`src/stores/`、`src/utils/`（均为待提交 untracked）；已改：`src/pages/index/index.vue`、`src/pages.json`。另有 D3 产物的历史改动（`design/tokens/tokens.json`、`src/styles/tokens.scss`、`docs/UI_SPEC.md`、`docs/ARCHITECTURE.md`、`scripts/`、`design/figma-plugin/code.js`）仍未提交。上一提交：`25e33f2`（D4）。
+
+---

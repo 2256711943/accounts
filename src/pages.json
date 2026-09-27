@@ -14,17 +14,19 @@
 			"path": "pages/index/index",
 			"style": {
 				"navigationStyle": "custom",
-				"navigationBarTitleText": "一拍记"
+				"navigationBarTitleText": "一拍记",
+				"enablePullDownRefresh": true,
+				"backgroundTextStyle": "dark"
 			}
 		}
 	],
 	"globalStyle": {
 		"navigationBarTextStyle": "black",
 		"navigationBarTitleText": "一拍记",
-		// 下面两个色值必须与 design/tokens/tokens.json 的 color.bg.base (#FAF9F5) 保持一致。
+		// 下面两个色值必须与 design/tokens/tokens.json 的 color.bg.base (#FAFAFC) 保持一致。
 		// 这是全工程**唯一**允许出现字面色值的地方：导航栏底色由平台读取，只接受字面量，
 		// 无法引用 SCSS 变量或 CSS 自定义属性。改 token 时记得同步这里。
-		"navigationBarBackgroundColor": "#FAF9F5",
-		"backgroundColor": "#FAF9F5"
+		"navigationBarBackgroundColor": "#FAFAFC",
+		"backgroundColor": "#FAFAFC"
 	}
 }
