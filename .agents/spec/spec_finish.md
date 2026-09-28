@@ -428,3 +428,48 @@ D6 合规链路的**上线前手工步骤**（不入库，需在小程序后台�
 ### 10.4 可写进简历的一句话
 
 > 相机/相册**授权被拒时走完整降级路径**（相册 → 手动录入 stub），并实现新版《用户隐私保护指引》的 `onNeedPrivacyAuthorization` + `requirePrivacyAuthorize` 流程；拍照页以**普通分包**打包隔离，主包增量几乎为零。
+
+---
+
+## 11. 本次追加：D6 代码审核 + 两项修复（2026-09-28）
+
+对照 `docs/SPEC.md` 对 D6 本次变动做一轮代码审核，结论为**对齐度高、全部 DoD 与红线满足**；另落地两项审核发现的修复。
+
+### 11.1 审核结论（与 SPEC §1.2 / §6.3 / US-01 / 红线 2/5/6 对照）
+
+| 项 | 结论 |
+|---|---|
+| 取景框 622×822rpx + accent 四角、快门 144rpx、相册/手输 stub | ✅ |
+| 相机未授权 → `SgEmpty`+「去开启」，**下方相册/手输入口保留**（US-01「拒绝后有出路」） | ✅ 底部操作栏独立于取景框条件渲染 |
+| 隐私弹窗 + store 唯一状态源；App.onLaunch 注册 | ✅ |
+| pages.json `subPackages`、manifest `optimization.subPackages` | ✅ 位于 `mp-weixin` 段 |
+| media/privacy/system 双端 + wx.d.ts 扩展 | ✅ 单文件 + 函数体内 `#ifdef`（红线 2） |
+| FAB 残留 `#ifdef MP-WEIXIN uni.vibrateShort` → `adapters/system` | ✅ 全 `src/` 的 `#ifdef` 仅剩适配层 |
+| 适配层带降级标记、不抛未捕获异常（红线 6）；`wx` 仅出现在 adapters（红线 5） | ✅ |
+
+### 11.2 修复项
+
+1. **H5 相机直达**（`src/adapters/media.ts`）：
+   `pickImage(source)` 把 `source` 透传给 H5 分支，`pickImageH5(source)` 在 `source === 'camera'` 时给临时 `<input>` 加 `capture="camera"`。
+   修复前 H5 端「快门」与「相册」行为完全相同（都弹文件选择器、无法直达相机）；修复后移动端 H5 拍照直达相机，桌面浏览器忽略 `capture` 退化为文件选择（对应 `DEV_PLAN.md` D6 风险「H5 需额外 capture 属性 → 保留双入口」）。
+
+2. **privacy store 幂等守卫**（`src/stores/privacy.ts`）：
+   `init()` 增加 `registered` 布尔，`bindNeedPrivacy` 只注册一次。
+   修复前 App.onLaunch 与页面 onLoad 各调一次 `init()`，会对 `wx.onNeedPrivacyAuthorization` 重复注册监听器（页面注释却写「幂等」，实现与注释不符）；修复后真正幂等，后续新增页面再调 `init()` 不会叠加监听。
+
+### 11.3 验证
+
+- `npm run type-check`：✅
+- `npm run lint`：✅ eslint（`--max-warnings 0`，本轮改动均为 `.ts`，零告警）；stylelint 仍报 4 处**存量**错误（`src/uni.scss` 2 处 `@import` 扩展名 + `src/pages-capture/index.vue` 2 处 `inset` 简写），均非本轮引入，待后续统一处理
+- `npm test`：✅ 63/63 通过（不回归）
+
+### 11.4 当前 Git 状态
+
+未提交改动（本轮两处修复）：
+
+```
+ M src/adapters/media.ts
+ M src/stores/privacy.ts
+```
+
+上一提交：`df61825`（feat(d6)：拍照页 + 相机权限降级闭环 + 隐私合规流程）。

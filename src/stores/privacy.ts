@@ -16,10 +16,13 @@ export const usePrivacyStore = defineStore('privacy', () => {
   const shown = ref(false);
   /** 当前被拦截接口的 resolve：不同意后必须调用，否则接口悬停 */
   let resolveFn: NeedPrivacyResolve | null = null;
+  /** 已注册过 onNeedPrivacyAuthorization，避免 App 与多个页面重复注册导致监听器叠加 */
+  let registered = false;
 
   /** 在 App 启动时调用一次：注册隐私回调。H5 端注册失败，shown 恒为 false。 */
   function init(): void {
-    bindNeedPrivacy((resolve) => {
+    if (registered) return;
+    registered = bindNeedPrivacy((resolve) => {
       resolveFn = resolve;
       shown.value = true;
     });

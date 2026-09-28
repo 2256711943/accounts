@@ -33,7 +33,7 @@ type MediaSource = 'camera' | 'album';
  * 返回结构化结果，绝不抛出。权限被拒 → `hasDenied: true`，由页面决定降级。
  */
 export function pickImage(source: MediaSource): Promise<MediaPickResult> {
-  if (!isMpWeixin()) return pickImageH5();
+  if (!isMpWeixin()) return pickImageH5(source);
   // #ifdef MP-WEIXIN
   return pickImageMp(source);
   // #endif
@@ -82,13 +82,18 @@ function pickImageMp(source: MediaSource): Promise<MediaPickResult> {
  *
  * ⚠️ 本函数**故意不包 `#ifdef`**：它要充当 `pickImage` 的默认值（同 cloud.ts 的 `callCloudH5`）。
  * 代价是 MP 产物里多留一份本函数（约数百字节，且 MP 端永不调用）。
+ *
+ * `source === 'camera'` 时给 `<input>` 加 `capture="camera"`：移动端 H5 直接拉起相机，
+ * 桌面浏览器忽略该属性、退化为文件选择（D6 风险项：区分相机 / 相册双入口）。
  */
-function pickImageH5(): Promise<MediaPickResult> {
+function pickImageH5(source: MediaSource): Promise<MediaPickResult> {
   return new Promise((resolve) => {
     try {
       const input = document.createElement('input');
       input.type = 'file';
       input.accept = 'image/*';
+      // camera 直达相机；album 走相册/文件选择器
+      if (source === 'camera') input.setAttribute('capture', 'camera');
       input.style.display = 'none';
       input.addEventListener(
         'change',
