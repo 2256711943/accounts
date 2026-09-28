@@ -87,5 +87,8 @@ $uni-font-size-paragraph: 15px;
  * 后再解析，相对路径会相对组件文件解析而失败；别名解析走 Node require，不带扩展名
  * 也找不到（实测两坑：`./styles/tokens` → Can't find stylesheet；`@/styles/tokens` → MODULE_NOT_FOUND）。
  * ───────────────────────────────────────────────────────────────────────────── */
+// 两处 @import 必须带 .scss 扩展名，否则 uni-app 别名解析报 MODULE_NOT_FOUND（见上文 §9.4.2 实测坑）
+// stylelint-disable-next-line scss/load-partial-extension
 @import '@/styles/tokens.scss';
+// stylelint-disable-next-line scss/load-partial-extension
 @import '@/styles/mixins.scss';

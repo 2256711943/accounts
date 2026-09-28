@@ -473,3 +473,27 @@ D6 合规链路的**上线前手工步骤**（不入库，需在小程序后台�
 ```
 
 上一提交：`df61825`（feat(d6)：拍照页 + 相机权限降级闭环 + 隐私合规流程）。
+
+---
+
+## 12. 本次追加：清理 4 处存量 stylelint 错误（2026-09-28）
+
+续 §11.3 遗留的「4 处存量 stylelint 错误」全部清零，`npm run lint` 达全绿。
+
+### 12.1 改动
+
+| 文件 | 处理 |
+|---|---|
+| `src/uni.scss` | 两处 `@import '@/styles/*.scss'` 被 `scss/load-partial-extension` 报错；`.scss` 扩展名是**功能必需**（§9.4.2 实测：去掉会 `MODULE_NOT_FOUND`），故不删扩展名，改为逐行 `// stylelint-disable-next-line scss/load-partial-extension` 豁免 |
+| `src/pages-capture/index.vue` | `cap__mask` 与 `cap__frame-hint-box` 的 `top/right/bottom/left: 0` 全部简写为 `inset: 0`（两处） |
+
+### 12.2 验证
+
+- `npm run type-check`：✅
+- `npm run lint`：✅（eslint + stylelint 全绿，exit 0）
+- `npm test`：✅ 63/63
+- `npm run build:h5` / `build:mp-weixin`：✅ 双端构建通过
+
+### 12.3 当前 Git 状态
+
+上一提交：`7728faa`（fix(d6)：H5 相机直达 + privacy store 幂等守卫）。本轮新增未提交改动：`src/uni.scss`、`src/pages-capture/index.vue`、本条 `spec_finish.md`。
