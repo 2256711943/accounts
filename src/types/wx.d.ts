@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /**
  * 微信小程序全局 `wx` 的最小类型声明。
  *
@@ -42,9 +43,89 @@ declare namespace WxCloud {
   }
 }
 
+/* ------------------------------------------------------------------ *
+ * 授权 / 隐私 / 选择媒体 的最小类型（D6 拍照页用）
+ * ------------------------------------------------------------------ */
+
+namespace WxSetting {
+  interface SettingResult {
+    authSetting: Record<string, boolean | undefined>;
+    errMsg: string;
+  }
+  interface FailResult {
+    errMsg?: string;
+  }
+  interface QueryOption {
+    success?: (res: SettingResult) => void;
+    fail?: (res: FailResult) => void;
+  }
+  interface AuthorizeOption {
+    /** 授权作用域，如 'scope.camera' */
+    scope: string;
+    success?: () => void;
+    fail?: (res: FailResult) => void;
+  }
+}
+
+namespace WxMedia {
+  interface TempFile {
+    tempFilePath: string;
+    size: number;
+    fileType?: string;
+  }
+  interface ChooseMediaResult {
+    tempFiles: TempFile[];
+    errMsg: string;
+  }
+  interface ChooseMediaOption {
+    count?: number;
+    mediaType?: Array<'image' | 'video' | 'mix'>;
+    sourceType?: Array<'album' | 'camera'>;
+    sizeType?: Array<'original' | 'compressed'>;
+    success?: (res: ChooseMediaResult) => void;
+    fail?: (res: { errMsg?: string }) => void;
+  }
+}
+
+namespace WxPrivacy {
+  /** onNeedPrivacyAuthorization 的 resolve：agree/disagree 后推进被拦截的隐私接口 */
+  type Resolve = (opts?: { event?: 'agree' | 'disagree'; buttonId?: string }) => void;
+  interface PrivacySettingInfo {
+    needAuthorization: boolean;
+    privacyContractName?: string;
+    errMsg?: string;
+  }
+  interface GetSettingOption {
+    success?: (res: PrivacySettingInfo) => void;
+    fail?: (res: { errMsg?: string }) => void;
+  }
+}
+
 interface WxNamespace {
   /** H5 端不存在该属性；小程序端恒存在 */
   cloud?: WxCloud.CloudNamespace;
+
+  /** 获取当前授权状态（如 authSetting['scope.camera']） */
+  getSetting(option: WxSetting.QueryOption): void;
+  /** 发起授权申请（scope.*） */
+  authorize(option: WxSetting.AuthorizeOption): void;
+  /** 打开系统设置页，引导用户重新授权 */
+  openSetting(option: WxSetting.QueryOption): void;
+
+  /** 选择图片/视频；sourceType 决定走相机还是相册 */
+  chooseMedia(option: WxMedia.ChooseMediaOption): void;
+
+  /** 系统轻震 */
+  vibrateShort(option?: { type?: 'heavy' | 'medium' | 'light' }): void;
+
+  /** 隐私接口被调用前触发，用于弹出自有《隐私保护指引》 */
+  onNeedPrivacyAuthorization(callback: (resolve: WxPrivacy.Resolve) => void): void;
+  /** 请求用户同意隐私协议；成功回调用于继续被拦截的接口 */
+  requirePrivacyAuthorize(option: { success?: () => void; fail?: () => void }): void;
+  /** 查询是否需要隐私授权 */
+  getPrivacySetting(option: WxPrivacy.GetSettingOption): void;
+  /** 打开官方隐私保护指引 */
+  openPrivacyContract(option?: { fail?: (res: { errMsg?: string }) => void }): void;
 }
 
 declare const wx: WxNamespace;

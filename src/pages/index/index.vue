@@ -112,7 +112,7 @@ import { computed, ref } from 'vue';
 import { onLoad, onPullDownRefresh, onReachBottom } from '@dcloudio/uni-app';
 import { useRecordStore } from '@/stores/record';
 import { fenToYuan, groupByDay } from '@/utils/format';
-import { prefersReducedMotion } from '@/adapters/system';
+import { prefersReducedMotion, vibrateShort } from '@/adapters/system';
 import type { LedgerRecord } from '@/types/model';
 
 const store = useRecordStore();
@@ -226,11 +226,9 @@ function onTapItem(item: LedgerRecord) {
   uni.showToast({ title: `${categoryName(item.categoryId)} ${fenToYuan(item.amount)} 元`, icon: 'none' });
 }
 function onTapFab() {
-  // 拍照页 D6 接入；触发轻微振动提示已响应
-  // #ifdef MP-WEIXIN
-  uni.vibrateShort({ type: 'light' });
-  // #endif
-  uni.showToast({ title: '拍照记账 D6 接入', icon: 'none' });
+  // 拍照页 D6 接入：轻震反馈 + 跳分包页面（平台差异收敛在 adapters/system）
+  vibrateShort('light');
+  uni.navigateTo({ url: '/pages-capture/index' });
 }
 </script>
 

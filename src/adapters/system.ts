@@ -20,3 +20,28 @@ export function prefersReducedMotion(): boolean {
   return false;
   // #endif
 }
+
+/** 当前是否运行在微信小程序端。 */
+export function isMpWeixin(): boolean {
+  // #ifdef MP-WEIXIN
+  return true;
+  // #endif
+  // #ifndef MP-WEIXIN
+  return false;
+  // #endif
+}
+
+/**
+ * 系统轻震。非小程序端 no-op（H5 无该能力）。
+ * 永不抛未捕获异常（架构红线 6）。
+ */
+export function vibrateShort(type: 'heavy' | 'medium' | 'light' = 'light'): void {
+  if (!isMpWeixin()) return;
+  // #ifdef MP-WEIXIN
+  try {
+    wx.vibrateShort({ type });
+  } catch {
+    /* 震动失败无碍功能，忽略 */
+  }
+  // #endif
+}

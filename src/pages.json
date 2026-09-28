@@ -30,6 +30,21 @@
 			}
 		}
 	],
+	// 普通分包（D12 起独立分包）：拍照页打包进分包，避免撑大主包体积预算。
+	"subPackages": [
+		{
+			"root": "pages-capture",
+			"pages": [
+				{
+					"path": "index",
+					"style": {
+						"navigationStyle": "custom",
+						"navigationBarTitleText": "拍照记账"
+					}
+				}
+			]
+		}
+	],
 	"globalStyle": {
 		"navigationBarTextStyle": "black",
 		"navigationBarTitleText": "一拍记",

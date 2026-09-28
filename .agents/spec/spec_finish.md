@@ -386,3 +386,45 @@ D5 首页曾因 `src/components/` 不存在而用「原生 view + Token」兜底
 > 自研 7 个原子组件 + Design Token 全量消费：变体归一化抽成可单测纯函数（45 用例），Wot 组件库经 `--wot-*` 变量桥接统一视觉，主包增量约 60 KB。
 
 
+
+---
+
+## 10. D6 · 拍照页 + 相机权限（2026-09-28）
+
+> 对应 `docs/DEV_PLAN.md` **D6**。结论：**拍照页完成 + 相机授权降级闭环 + 隐私合规流程，双端 build 通过、type-check / test 通过**。
+
+### 10.1 本轮新增
+
+| 文件 | 说明 |
+|---|---|
+| `src/adapters/media.ts` | 拍照/相册选图：MP `wx.chooseMedia`，H5 程序化 `input[type=file]` → `URL.createObjectURL`；失败带 `hasDenied/canceled` 降级标记，永不抛异常（红线 6） |
+| `src/adapters/privacy.ts` | 隐私适配：`bindNeedPrivacy` / `requestPrivacyAuthorize` / `openPrivacyContract` / `getCameraAuthStatus` / `openSetting`，H5 全 no-op |
+| `src/adapters/system.ts`＋ | 收敛首页 FAB 残留 `#ifdef MP-WEIXIN uni.vibrateShort` → `isMpWeixin()` / `vibrateShort()` |
+| `src/stores/privacy.ts` | 隐私弹窗唯一状态源：注册 `onNeedPrivacyAuthorization`，`agree()` 用 resolve 推进、`refuse()` 取消并保留下方相册/手输路径 |
+| `src/pages-capture/index.vue` | 拍照页（**普通分包**）：取景框 622×822rpx + accent 四角、快门 144rpx、相册/手输、隐私弹窗、未授权 → `SgEmpty`+「去开启」并保留降级出口；手输为 stub（D8 接真实表单） |
+| `src/types/wx.d.ts`＋ | 扩展 `getSetting/authorize/openSetting/chooseMedia/vibrateShort/onNeedPrivacyAuthorization/requirePrivacyAuthorize/getPrivacySetting/openPrivacyContract` 及对应 namespace |
+| `src/pages.json`＋ | 新增 `subPackages`（root `pages-capture`，page index，custom 导航） |
+| `src/manifest.json`＋ | `mp-weixin.optimization.subPackages = true` |
+| `src/App.vue`＋ | `onLaunch` 调 `usePrivacyStore().init()` |
+| `src/pages/index/index.vue`＋ | FAB 接 `uni.navigateTo('/pages-capture/index')` + `vibrateShort('light')`，删除 `#ifdef` 残留 |
+
+### 10.2 验证
+
+- `npm run type-check`：✅
+- `npm run lint`：✅（JS 全绿；stylelint 仅 `src/uni.scss` 既有 2 处 `.scss` 扩展名告警，非本轮引入）
+- `npm test`：✅ 63/63 通过
+- `npm run build:mp-weixin` / `build:h5`：✅ 双端编译通过
+- 分包核验：`dist/build/mp-weixin/pages-capture/` 产物齐全，`app.json` 已登记 `subPackages: [{ root: pages-capture }]`
+- **主包体积**：约 **237.36 KB**（不含分包；拍照页约 7KB 已隔离进分包，不挤压主包预算）
+
+### 10.3 生产配置变更（dry-run 待确认，未直接改动）
+
+D6 合规链路的**上线前手工步骤**（不入库，需在小程序后台操作）：
+
+1. **隐私保护指引**：微信公众平台 → 设置 → 服务内容声明 → 「用户隐私保护指引」，声明使用 **相机**（`scope.camera`）、**相册（仅读取）** 权限，用途填「拍照/选择小票图片用于 AI 记账」。
+2. `src/manifest.json` 已配 `setting.cloud: true`、`cloudfunctionRoot`；**隐私指引无需改 manifest**，由前端 `onNeedPrivacyAuthorization` 回调消费。
+3. 体验版/发布需在小程序后台完成隐私授权配置，否则正式环境调用 `chooseMedia` 会触发合规拦截。
+
+### 10.4 可写进简历的一句话
+
+> 相机/相册**授权被拒时走完整降级路径**（相册 → 手动录入 stub），并实现新版《用户隐私保护指引》的 `onNeedPrivacyAuthorization` + `requirePrivacyAuthorize` 流程；拍照页以**普通分包**打包隔离，主包增量几乎为零。

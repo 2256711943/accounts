@@ -56,9 +56,13 @@
             "cloud" : true
         },
         /* 云函数根目录：相对小程序根目录解析，由 vite.config.ts 的 syncCloudFunctions 复制进产物 */
-        "cloudfunctionRoot" : "cloudfunctions/",
-        "usingComponents" : true
-    },
+		"cloudfunctionRoot" : "cloudfunctions/",
+		"usingComponents" : true,
+		/* D6：开启分包优化，pages-capture 按普通分包打包，后续 D12 改独立分包 */
+		"optimization" : {
+			"subPackages" : true
+		}
+	},
     "mp-alipay" : {
         "usingComponents" : true
     },

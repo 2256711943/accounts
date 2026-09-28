@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onLaunch } from '@dcloudio/uni-app';
+import { usePrivacyStore } from '@/stores/privacy';
 
 /**
  * 应用级生命周期。
@@ -8,6 +9,8 @@ import { onLaunch } from '@dcloudio/uni-app';
  * 免得开发日志混进生产包（D14 交付检查项「无 console.log 残留」）。
  */
 onLaunch(() => {
+  // D6：注册《隐私保护指引》回调（H5 端为空实现，恒不弹）
+  usePrivacyStore().init();
   // TODO(D13): perf.mark('launch')
 });
 </script>
