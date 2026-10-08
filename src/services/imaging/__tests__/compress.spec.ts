@@ -73,6 +73,8 @@ describe('compressImage', () => {
     expect(m!.compressedSizeBytes).toBe(150_000);
     expect(m!.ratioPct).toBe(4);
     expect(m!.dpr).toBe(3);
+    // 压缩产物路径 = 命中那一次的临时路径（D8 上传管线消费）
+    expect(m!.tempFilePath).toBe('t2');
     // encode 传参包含降采样后尺寸与当前质量级
     expect(mocks.encodeImage).toHaveBeenNthCalledWith(1, 'blob:test', { width: 1600, height: 1200, quality: 0.8 });
     expect(mocks.encodeImage).toHaveBeenNthCalledWith(2, 'blob:test', { width: 1600, height: 1200, quality: 0.6 });

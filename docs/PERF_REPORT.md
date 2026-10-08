@@ -94,3 +94,44 @@
 | `src/pages.json` | 注册 `pages/dev/compress` |
 | `src/types/wx.d.ts` | 补充 `getImageInfo/createImage/canvasToTempFilePath/getFileInfo` 类型 |
 | `docs/PERF_REPORT.md` | **本报告（新增）** |
+
+---
+
+# Part 2 — D8 上传与识别链路（L0 闭环占位实测）
+
+> **采集日期**：2026-10-08 ｜ 运行环境：H5（`pages/dev/compress.vue` 合成样张 + 本地 vitest）
+> **说明**：D8 本轮目标是「前端 L0 闭环优先」。以下识别（L0 规则引擎）耗时在本地直接实测；**云上传 / L1 云端识别两项属云端能力，需真机 + 部署后才能实测**，本轮记为「待真机」。
+
+## 2.1 L0 规则识别耗时（本地实测，纯函数）
+
+| 输入形态 | 样本 | 平均耗时 | 说明 |
+|---|---|---|---|
+| 纯数字文本（`"总计 ¥45.50"`） | 小票金额行 | **< 1ms** | `extractAmount` 正则 + `toFen`，无 I/O |
+| 含关键词文本（`"麦当劳 午餐 45"`） | 带商户名小票 | **< 1ms** | 正则抽金额 + `mapCategory` 关键词多数决 |
+| 长文本（多行账单） | 300 字拼接 | **~1ms** | 单次遍历，复杂度 O(n) 且 n 极小 |
+
+> L0 规则引擎为纯内存正则 + 关键词查找，耗时在 ms 级，**对上传链路无感知**。真实瓶颈是压缩（H5 实测 567ms 均值，见 Part 1）与上传（云端）。
+
+## 2.2 上传 / L1 识别（待真机，本轮范围为「不阻塞记账」降级路径）
+
+| 环节 | 设计 | 本轮状态 |
+|---|---|---|
+| 云存储上传 | MP `wx.cloud.uploadFile`（指数退避 + 并发 ≤3）；H5 无 SDK → `{unsupported:true}` **不阻塞记账** | ✅ 已实现/降级已打通；**单传耗时待真机** |
+| L1 云端识别 | `call('recognize.image')` → 失败 catch 降级 L0 | ✅ 编排已实现；**云端模型待部署与凭据，本轮不触发** |
+| 记账不阻塞 | 上传失败 → `imageFileId` 留空，账单照常 `record.upsert` | ✅ 已实现并验证（`onConfirm` 组装时 `imageFileId` 可选） |
+
+## 2.3 D8 变更清单
+
+| 文件 | 改动 |
+|---|---|
+| `src/services/imaging/upload.ts` | 上传管线：`computeBackoffDelay` / `createConcurrencyLimiter` 纯函数 + `uploadRecordImage`（指数退避 / unsupported 降级 / 最终失败挂起待补传） |
+| `src/services/recognize/categories.ts` | 9 分类常量 + 关键词映射（L0 数据源） |
+| `src/services/recognize/rule.ts` | L0 规则识别：`extractAmount` / `mapCategory` / `recognizeByRules` |
+| `src/services/recognize/orchestrator.ts` | 识别编排：L1 云端 → 失败降级 L0（`RecognizeCandidate` 带 engine/confidence/degraded） |
+| `src/components/biz/ConfirmCard.vue` | 识别确认卡（可编辑字段 + 降级琥珀条） |
+| `src/adapters/cloud.ts` | `uploadToCloud`：MP 直传 / H5 `unsupported` 降级 |
+| `src/adapters/imaging.ts` | `bindCanvas` 改为无条件导出（避免 H5 构建丢失导出） |
+| `src/services/imaging/compress.ts` | `CompressMetrics` 增加 `tempFilePath`（上传承接压缩产物路径） |
+| `src/pages-capture/index.vue` | 拍照→压缩→上传→识别→确认→`record.upsert` 全链路接线 |
+| `src/utils/id.ts` | `generateId()`（uuid v4，幂等 clientId） |
+| 新增单测 | `rule.spec.ts`（17）、`upload.spec.ts`（7） |

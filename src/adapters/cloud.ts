@@ -170,3 +170,72 @@ async function callCloudMp<T>(action: string, payload: unknown): Promise<CloudCa
   }
 }
 // #endif
+
+/* ------------------------------------------------------------------ *
+ * 云存储上传（D8 压缩图片入云存储，拿到 imageFileId 写进账单）
+ * ------------------------------------------------------------------ */
+
+/**
+ * `uploadToCloud` 的返回。适配层契约：绝不抛异常（红线 6）。
+ * `unsupported: true` = 当前端无云存储 SDK（H5），调用方应走「不阻塞记账」降级。
+ */
+export interface CloudUploadResult {
+  ok: boolean;
+  /** 上传成功后云存储 fileID（写进 `LedgerRecord.imageFileId`） */
+  fileId?: string;
+  /** true = 当前端不支持直传云存储（H5），上图不落云、记账照常 */
+  unsupported?: boolean;
+  errMsg?: string;
+}
+
+/** 生成云存储路径：按账单时间分桶，避免同名覆盖。MP 端调用方会传 `prefix`。 */
+function buildCloudPath(prefix: string): string {
+  const rand = Math.random().toString(36).slice(2, 8);
+  return `${prefix}/${Date.now()}-${rand}.jpg`;
+}
+
+/**
+ * 上传一张本地图片到云存储。
+ *
+ * - MP：`wx.cloud.uploadFile` 直传，返回 fileID
+ * - H5：无云存储 SDK → `{ ok: false, unsupported: true }`（上传走云函数中转属云端能力，
+ *   此轮 L0 闭环以「图片不落云、记账不阻塞」为降级路径；真实 H5 上传中转待部署后补）
+ *
+ * 失败（含网络/超时）不抛，由 `services/imaging/upload.ts` 做重试与降级编排。
+ */
+export async function uploadToCloud(path: string, prefix = 'bills'): Promise<CloudUploadResult> {
+  // 默认 = 不支持云存储（H5）；MP 端在下面被覆盖
+  let uploader: (p: string, pre: string) => Promise<CloudUploadResult> = uploadToCloudH5;
+
+  // #ifdef MP-WEIXIN
+  uploader = uploadToCloudMp;
+  // #endif
+
+  return uploader(path, prefix);
+}
+
+/** H5 实现：无云存储 SDK，标记 unsupported（同 `callCloudH5` 的默认值策略）。 */
+async function uploadToCloudH5(_path: string, _prefix: string): Promise<CloudUploadResult> {
+  return { ok: false, unsupported: true, errMsg: 'H5 端无云存储 SDK，图片未上传（记账不受影响）' };
+}
+
+// #ifdef MP-WEIXIN
+/** MP 实现：`wx.cloud.uploadFile` 直传云存储。仅保留在 MP 产物。 */
+async function uploadToCloudMp(path: string, prefix: string): Promise<CloudUploadResult> {
+  const base = wx.cloud;
+  if (!base) {
+    return { ok: false, errMsg: 'wx.cloud 不可用：请确认已开通云开发' };
+  }
+  // uni-app 的 `wx.cloud` 类型（CloudNamespace）未覆盖 `uploadFile`，按需做窄化结构声明，
+  // 不落 `any`（AGENTS 禁 any 滥用），只声明用到的 uploadFile 形状。
+  const cloud = base as unknown as {
+    uploadFile: (opts: { cloudPath: string; filePath: string }) => Promise<{ fileID: string }>;
+  };
+  try {
+    const res = await cloud.uploadFile({ cloudPath: buildCloudPath(prefix), filePath: path });
+    return res.fileID ? { ok: true, fileId: res.fileID } : { ok: false, errMsg: '上传返回空 fileID' };
+  } catch (err) {
+    return { ok: false, errMsg: err instanceof Error ? err.message : String(err) };
+  }
+}
+// #endif

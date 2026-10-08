@@ -37,10 +37,12 @@ export interface CompressMetrics {
   targetHeight: number;
   originalSizeBytes: number;
   compressedSizeBytes: number;
-  /** 最终命中/兜底的质量级 */
+  /** 最终命中的质量级 */
   quality: number;
   /** 尝试过的质量阶梯数 */
   steps: number;
+  /** 压缩产物的临时路径（D8 上传管线需消费：直接把压好的图传云，而非原图） */
+  tempFilePath: string;
   costMs: number;
   dpr: number;
   /** 压缩比（%）：compressed / original */
@@ -119,6 +121,7 @@ export async function compressImage(
     compressedSizeBytes: last.size,
     quality,
     steps,
+    tempFilePath: last.tempFilePath,
     costMs: Date.now() - start,
     dpr,
     ratioPct: originalSizeBytes > 0 ? Math.round((last.size / originalSizeBytes) * 100) : 0,

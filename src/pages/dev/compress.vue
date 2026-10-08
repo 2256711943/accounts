@@ -194,6 +194,7 @@ async function synthesize(): Promise<void> {
 async function makeFallback(s: Sample, _seed: number): Promise<MetricRow> {
   return {
     label: s.label,
+    tempFilePath: '',
     sourceWidth: s.width,
     sourceHeight: s.height,
     targetWidth: 0,

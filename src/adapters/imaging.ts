@@ -147,15 +147,17 @@ interface MpCanvas2d {
 /** MP 端：页面 `onReady` 时经 `bindCanvas` 注入 `<canvas type="2d">` 节点。 */
 let mpCanvas: MpCanvas2d | null = null;
 
-// #ifdef MP-WEIXIN
 /**
  * 绑定小程序 canvas 2d 节点（页面 `<canvas type="2d">` 经 `uni.createSelectorQuery` 得到）。
+ *
+ * ⚠️ 本函数**无条件导出**（不包 `#ifdef`）：拍照页（普通分包）无条件 import 它，
+ * 若包起来 H5 构建不留该导出会触发「引用不存在的导出」；H5 端走 `toBlob` 不使用
+ * `mpCanvas`，这里只写入一个无人读取的模块变量，安全降级（同 `callCloudH5` 约定）。
  * 调用方在页面 `onReady` 时绑定；压缩导出统一输出到该节点。传 null 解绑。
  */
 export function bindCanvas(node: MpCanvas2d | null): void {
   mpCanvas = node;
 }
-// #endif
 
 function getImageInfoMp(src: string): Promise<ImageInfo | null> {
   return new Promise((resolve) => {

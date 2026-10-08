@@ -543,3 +543,61 @@ D6 合规链路的**上线前手工步骤**（不入库，需在小程序后台�
 ```
 
 上一提交：`090ae70`（chore(style)：清理存量 stylelint 错误）。（另注 `.claude/`、`.trae/` 为工具生成未入库目录，沿用仓库卫生待办 §5.2，不随本轮提交。）
+
+---
+
+## 14. D8 · 上传管线 + 识别编排 + ConfirmCard（前端 L0 闭环优先，2026-10-08）
+
+> 本轮边界（用户确认「前端 L0 闭环优先」）：**不触碰生产凭据（MODEL_API_KEY）与云部署**。实现「压缩→上传→识别（L1 云端降级→L0 规则）→确认→`record.upsert`」的前端闭环，双端可跑。
+
+### 14.1 交付物
+
+- `src/services/imaging/upload.ts`：上传管线。纯函数 `computeBackoffDelay`（指数退避，`base*2^(tries-1)` 封顶 capMs）+ `createConcurrencyLimiter`（并发 ≤3，按入队序收结果）；`uploadRecordImage`（unsupported 直接降级不重试、可重试失败指数退避、最终失败 `queued:true` 挂起待 D10 补传，**不抛不阻塞记账**）。
+- `src/services/recognize/categories.ts`：9 分类常量 + `CATEGORY_KEYWORDS`（L0 数据源，内置免首屏依赖网络）。
+- `src/services/recognize/rule.ts`（L0）：`extractAmount`（正则 + 合计词优先，`toFen`，上限 1e8 分）+ `mapCategory`（关键词多数决，置信 0/0.6/0.8/0.95）+ `recognizeByRules`。
+- `src/services/recognize/orchestrator.ts`：识别编排 `recognizePhoto`（先 `call('recognize.image')`→catch 降级 L0）+ `recognizeText`。
+- `src/components/biz/ConfirmCard.vue`：识别确认卡。props in / emit out（不读 store 不发请求）；金额/商户/分类/时间可编辑；`degraded || confidence<0.5` 显示降级琥珀条；确认 emit `{amountFen, merchant, categoryKey, happenedAt}`。
+- `src/adapters/cloud.ts`：`uploadToCloud`（MP `wx.cloud.uploadFile` 直传 / H5 `{unsupported:true}` 降级）★ `uploadFile` 不在 uni CloudNamespace 类型内，用窄化结构声明 cast，不落 `any`。
+- `src/adapters/imaging.ts`：`bindCanvas` 改为**无条件导出**（避免 H5 构建丢失导出触发「引用不存在的导出」；H5 走 toBlob 不读该变量，安全降级）。
+- `src/services/imaging/compress.ts`：`CompressMetrics` 增加 `tempFilePath` 字段（上传承接压缩产物路径）。
+- `src/utils/id.ts`：`generateId()` = uuid v4（幂等 clientId）。
+- `src/pages-capture/index.vue`：`startFlow` 主链路接线（压缩→上传→识别→弹确认卡）+ `onConfirm` 组装 `LedgerRecord` + `record.upsert`；onReady 用 `.node()` 绑定隐藏 canvas（原 `.fields` 需回调参数导致 vue-tsc 报错，改 `.node()` 更契合）。
+
+### 14.2 验证
+
+- `npm run type-check`：✅（strict）
+- `npm run lint`：✅（eslint + stylelint 全绿）
+- `npm test`：✅ 99/99（压缩 12 + 识别 rule 17 + 上传 upload 7 + presets 45 + ledger 18）
+- `npm run build:mp-weixin`：✅ DONE
+- `npm run build:h5`：✅ DONE
+- L0 识别纯函数本地实测耗时 <1ms（PERF_REPORT Part 2）
+
+### 14.3 踩坑修复
+
+- **ConfirmCard SCSS `@/styles/tokens` 不可用**：sass 解析器不识别 alias，双端 build 报 `Cannot find module 'src/styles/tokens'`。改相对路径 `../../styles/tokens`（同 index.vue 的 `../styles/tokens` 惯例）。
+- **onReady `.fields({node,size})` 报错**：`SelectorQuery.fields` 类型需 2 参（fields + callback）。改 `.node((res)=>bindCanvas(res?.node ?? null))`。
+- **`<input @input>` 事件类型冲突**：vue-tsc 按 DOM 原生 input 推断（`detail:number`）。用 `(e:unknown)` + 窄化 `detail?.value`，两端运行时均为 `e.detail.value`。
+- **`uploadFile` / `tempFilePath` 类型缺口**：前者窄化 cast，后者 `makeFallback` 补 `tempFilePath:''`，连续两轮 type-check 收敛。
+- **upload.spec 需 mock adapter**：`upload.ts` 顶层 import `@/adapters/cloud`，纯函数测试若不 mock 会走 alias 解析失败；`vi.mock('@/adapters/cloud', ...)` 短路（同 compress.spec 策略）。
+
+### 14.4 诚实局限（已写入 PERF_REPORT Part 2）
+
+- **云上传单传耗时 / L1 云端识别**属云端能力，需真机 + 部署后实测，本轮为「待真机」，前端已退化为「图片不落云、记账不阻塞」。
+- L0 规则识别只覆盖金额/分类，**商户名/模糊金额的准确率未量化**；D9 再造 OCR 校验样本。
+- 手输入口 D8 仍为 stub，D8 交接给 D9（表单复用 ConfirmCard 拆分）。
+
+### 14.5 当前 Git 状态（未提交，待本轮提交）
+
+```
+ M src/adapters/cloud.ts / imaging.ts
+ M src/pages-capture/index.vue
+ M src/pages/dev/compress.vue              （保存页同步 tempFilePath 字段）
+ M src/services/imaging/compress.ts / __tests__/compress.spec.ts
+?? src/components/biz/ConfirmCard.vue
+?? src/services/imaging/upload.ts / __tests__/upload.spec.ts
+?? src/services/recognize/（categories.ts / rule.ts / orchestrator.ts / __tests__/rule.spec.ts）
+?? src/utils/id.ts
+ M docs/PERF_REPORT.md（Part 2）
+```
+
+上一提交：`fb68e10`（feat(imaging)：D7 压缩管线 + 20 张样张实测数据）。（另注 `.claude/`、`.trae/` 为工具生成未入库目录，沿用仓库卫生待办 §5.2，不随本轮提交。）

@@ -45,6 +45,21 @@
       </view>
     </view>
 
+    <!-- 处理中（压缩 / 上传 / 识别） -->
+    <view v-if="processing" class="cap__processing">
+      <text class="cap__processing-text">识别中…</text>
+    </view>
+
+    <!-- 识别确认卡（D8）：识别完成弹出，确认后记账入库 -->
+    <view v-if="candidate" class="cap__sheet-mask">
+      <view class="cap__sheet">
+        <ConfirmCard :result="candidate" @confirm="onConfirm" @cancel="onCancelConfirm" />
+      </view>
+    </view>
+
+    <!-- 隐藏 canvas 2d：D8 压缩管线在 MP 端需绑定节点（H5 走 toBlob 无需） -->
+    <canvas id="cap-canvas" type="2d" class="cap__canvas" />
+
     <!-- 隐私指引弹窗 -->
     <view v-if="privacy.shown" class="cap__mask">
       <view class="cap__privacy">
@@ -76,14 +91,23 @@
  * - 手输：D6 为 stub，D8 接真实表单
  * - 识别 / 上传 / 确认卡：D8-D9 接入，本页不阻塞
  */
-import { onLoad, onShow } from '@dcloudio/uni-app';
+import { onLoad, onReady, onShow, onUnload } from '@dcloudio/uni-app';
 import { ref } from 'vue';
 import { pickImage } from '@/adapters/media';
 import { getCameraAuthStatus, openPrivacyContract, openSetting } from '@/adapters/privacy';
+import { bindCanvas } from '@/adapters/imaging';
 import { vibrateShort } from '@/adapters/system';
 import { usePrivacyStore } from '@/stores/privacy';
+import { compressImage, DEFAULT_TARGET } from '@/services/imaging/compress';
+import { uploadRecordImage } from '@/services/imaging/upload';
+import { recognizePhoto } from '@/services/recognize/orchestrator';
+import { call } from '@/api/client';
+import { generateId } from '@/utils/id';
+import ConfirmCard from '@/components/biz/ConfirmCard.vue';
 import type { MediaPickResult } from '@/adapters/media';
 import type { CameraAuthStatus } from '@/adapters/privacy';
+import type { RecognizeCandidate } from '@/services/recognize/orchestrator';
+import type { LedgerRecord } from '@/types/model';
 
 const privacy = usePrivacyStore();
 
@@ -93,6 +117,14 @@ const auth = ref<CameraAuthStatus>('not-determined');
 const preview = ref('');
 /** 是否正在选择（防连点） */
 const picking = ref(false);
+/** D8：压缩/上传/识别进行中 */
+const processing = ref(false);
+/** D8：识别候选（非空 → 弹出确认卡） */
+const candidate = ref<RecognizeCandidate | null>(null);
+/** D8：压缩产物的 imageFileId（上传成功后才有；失败/不支持则留空降级） */
+const imageFileId = ref('');
+/** D8：保存中（防重复提交） */
+const saving = ref(false);
 
 async function refreshAuth() {
   const s = await getCameraAuthStatus();
@@ -103,6 +135,7 @@ function handlePick(res: MediaPickResult) {
   picking.value = false;
   if (res.ok && res.tempFilePath) {
     preview.value = res.tempFilePath;
+    startFlow(res.tempFilePath);
     return;
   }
   if (res.hasDenied) {
@@ -113,6 +146,73 @@ function handlePick(res: MediaPickResult) {
   if (!res.canceled) {
     uni.showToast({ title: res.errMsg || '选择失败，请重试', icon: 'none' });
   }
+}
+
+/**
+ * D8 主链路（best-effort，任一环节失败不阻塞整体）：
+ * 压缩（D7，拿压缩产物路径）→ 上传（云存储，失败降级不阻塞）→ 识别（L1 → L0 降级）→ 弹确认卡。
+ */
+async function startFlow(src: string) {
+  if (processing.value) return;
+  candidate.value = null;
+  imageFileId.value = '';
+  processing.value = true;
+  try {
+    // 1. 压缩：失败则回退用原图路径（不阻塞上传/记账）
+    const c = await compressImage(src, DEFAULT_TARGET);
+    const compressedPath = c?.tempFilePath || src;
+    // 2. 上传：失败（含 H5 unsupported）→ imageFileId 留空，记账不阻塞
+    const up = await uploadRecordImage(compressedPath);
+    if (up.imageFileId) imageFileId.value = up.imageFileId;
+    // 3. 识别：L1 云端 → 不可用降级 L0（低置信，用户核对）
+    candidate.value = await recognizePhoto({ fileId: up.imageFileId });
+  } finally {
+    processing.value = false;
+  }
+}
+
+/** 确认记账：组装 LedgerRecord → record.upsert（幂等）→ 回首页 */
+async function onConfirm(payload: {
+  amountFen: number;
+  merchant?: string;
+  categoryKey: string;
+  happenedAt: number;
+}) {
+  if (saving.value) return;
+  saving.value = true;
+  try {
+    const clientId = generateId();
+    const meta = candidate.value
+      ? {
+          engine: candidate.value.engine,
+          confidence: candidate.value.confidence,
+          costMs: candidate.value.costMs,
+          degraded: candidate.value.degraded,
+        }
+      : undefined;
+    const record: Partial<LedgerRecord> = {
+      type: 'expense',
+      amount: payload.amountFen,
+      categoryId: payload.categoryKey,
+      merchant: payload.merchant,
+      happenedAt: payload.happenedAt,
+      source: 'photo',
+      imageFileId: imageFileId.value ? imageFileId.value : undefined,
+      recognizeMeta: meta,
+    };
+    await call('record.upsert', { clientId, op: 'create', payload: record });
+    uni.showToast({ title: '已记账', icon: 'success' });
+    candidate.value = null;
+    setTimeout(() => uni.reLaunch({ url: '/pages/index/index' }), 600);
+  } catch (err) {
+    uni.showToast({ title: err instanceof Error ? err.message : '保存失败，请重试', icon: 'none' });
+  } finally {
+    saving.value = false;
+  }
+}
+
+function onCancelConfirm() {
+  candidate.value = null;
 }
 
 async function onShutter() {
@@ -155,8 +255,22 @@ onLoad(() => {
   privacy.init(); // 确保隐私回调已注册（App 启动也会注册，此处幂等）
   refreshAuth();
 });
+onReady(() => {
+  // MP 端把隐藏 canvas 2d 节点绑给压缩管线（D7）；H5 走 toBlob 无需该节点，绑定为空也可安全降级
+  uni
+    .createSelectorQuery()
+    .select('#cap-canvas')
+    .node((res) => {
+      // res.node = canvas 2d 节点；`.node()` 与 `.fields({node})` 等价但类型单一（省去 fields 回调签名）
+      bindCanvas(res?.node ?? null);
+    })
+    .exec();
+});
 onShow(() => {
   refreshAuth(); // 从系统设置返回后重查授权状态
+});
+onUnload(() => {
+  bindCanvas(null);
 });
 </script>
 
@@ -407,6 +521,54 @@ onShow(() => {
     &--hover {
       transform: scale(0.98);
     }
+  }
+
+  /* 处理中遮罩 */
+  &__processing {
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: $color-bg-mask;
+  }
+
+  &__processing-text {
+    padding: $sp-4 $sp-6;
+    font-size: $fs-body;
+    color: $color-text-inverse;
+    background-color: rgb(24 16 56 / 70%);
+    border-radius: $r-full;
+  }
+
+  /* 确认卡弹层（底部抽屉） */
+  &__sheet-mask {
+    position: fixed;
+    inset: 0;
+    z-index: 15;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    background-color: $color-bg-mask;
+  }
+
+  &__sheet {
+    width: 100%;
+    max-height: 78vh;
+    overflow-y: auto;
+    background-color: $color-bg-base;
+    border-radius: $r-xl $r-xl 0 0;
+    padding-bottom: calc(env(safe-area-inset-bottom) + #{$sp-3});
+  }
+
+  /* 隐藏 canvas：只做离屏占位，供 MP 端 createSelectorQuery 取 node */
+  &__canvas {
+    position: absolute;
+    left: -9999px;
+    top: 0;
+    width: 300px;
+    height: 300px;
   }
 }
 </style>
