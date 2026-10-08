@@ -28,6 +28,13 @@
 			"style": {
 				"navigationBarTitleText": "组件验收"
 			}
+		},
+		// 开发采集页：图片压缩管线样张采集（D7 亮点 H2，仅 H5 执行）
+		{
+			"path": "pages/dev/compress",
+			"style": {
+				"navigationBarTitleText": "压缩采集"
+			}
 		}
 	],
 	// 普通分包（D12 起独立分包）：拍照页打包进分包，避免撑大主包体积预算。

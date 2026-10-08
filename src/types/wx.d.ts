@@ -126,6 +126,58 @@ interface WxNamespace {
   getPrivacySetting(option: WxPrivacy.GetSettingOption): void;
   /** 打开官方隐私保护指引 */
   openPrivacyContract(option?: { fail?: (res: { errMsg?: string }) => void }): void;
+
+  /** 获取图片信息（宽高） */
+  getImageInfo(option: WxImg.InfoOption): void;
+  /** 创建一个可用于 `<canvas type="2d">` 绘制的图片对象 */
+  createImage(): WxImg.MpImage;
+  /** 把 canvas 2d 节点导出为临时图片文件（D7 压缩管线） */
+  canvasToTempFilePath(option: WxImg.CanvasExportOption): void;
+  /** 获取临时文件大小（字节） */
+  getFileInfo(option: WxImg.FileInfoOption): void;
+}
+
+/** 图片信息 / canvas 2d 导出 的最小类型（D7 压缩管线用）。 */
+namespace WxImg {
+  interface InfoResult {
+    width: number;
+    height: number;
+    errMsg?: string;
+  }
+  interface InfoOption {
+    src: string;
+    success?: (res: InfoResult) => void;
+    fail?: (res: { errMsg?: string }) => void;
+  }
+  /** 用于 `<canvas type="2d">` 绘制的图片对象（wx.createImage 返回） */
+  interface MpImage {
+    src: string;
+    onload: (() => void) | null;
+    onerror: (() => void) | null;
+  }
+  interface CanvasExportOption {
+    canvas?: unknown;
+    x?: number;
+    y?: number;
+    width?: number;
+    height?: number;
+    destWidth?: number;
+    destHeight?: number;
+    fileType?: string;
+    /** jpg 压缩质量，0-1 */
+    quality?: number;
+    success?: (res: { tempFilePath: string; errMsg?: string }) => void;
+    fail?: (res: { errMsg?: string }) => void;
+  }
+  interface FileInfoResult {
+    size: number;
+    errMsg?: string;
+  }
+  interface FileInfoOption {
+    filePath: string;
+    success?: (res: FileInfoResult) => void;
+    fail?: (res: { errMsg?: string }) => void;
+  }
 }
 
 declare const wx: WxNamespace;

@@ -497,3 +497,49 @@ D6 合规链路的**上线前手工步骤**（不入库，需在小程序后台�
 ### 12.3 当前 Git 状态
 
 上一提交：`7728faa`（fix(d6)：H5 相机直达 + privacy store 幂等守卫）。本轮新增未提交改动：`src/uni.scss`、`src/pages-capture/index.vue`、本条 `spec_finish.md`。
+
+---
+
+## 13. D7 · 图片压缩管线（亮点 H2，2026-10-08）
+
+> 对应 `docs/DEV_PLAN.md` **D7**。结论：**压缩管线实现 + 20 张「照片风」样张实测数据全量完成，type-check / lint / test / 双端 build 全过**。实现层（`adapters/imaging.ts` + `services/imaging/compress.ts` + 单测 + 采集页）在 D6 期间已预铺、本轮按 DoD 补数据与报告。
+
+### 13.1 交付物与实测数字
+
+- **超大图**：24.2MB（8000×6000）→ **186KB**，耗时 1304ms（压缩比 ≈ 1:130）
+- **大图**：12.1MB（6000×4000）→ **152KB**，耗时 877ms（≈ 1:82）
+- **整体**：20/20 成功，平均压缩比 1:25.2、平均耗时 567ms；6 张 >5MB 单次运行内降采样+压缩无 OOM
+- **阶梯路径覆盖**：s05 / s07 / s10 触发 0.8→0.6→0.4（3 步）降级；其余 0.8 首步命中即停（印证「首次 ≤200KB 即停」策略）
+- 完整数据表见 `docs/PERF_REPORT.md`（含测量方法 + seed 可复现样本清单）
+
+### 13.2 数据说服力补强（本轮产生）
+
+- 初版样张为「文档/收据风」浅底图，JPEG 压缩性过强 → 全部 `0.8/1` 步命中、最大原始仅 1.3MB，**无法体现「大图→200KB 级 + 阶梯降级」卖点**。
+- 将 `src/pages/dev/compress.vue` 的 `drawSample` 改为**照片风合成**（渐变光影 + 8–12 柔和色斑 + 全像素 ±23 摄影噪点，ImageData 一次性写入 + `toBlob` 0.95）→ 大图原始体积提升到 MB/数十 MB 级、触发阶梯。测得上述简历级数字。
+
+### 13.3 验证
+
+- `npm run type-check`：✅（strict）
+- `npm run lint`：✅（eslint + stylelint 全绿，含 compress.vue 改动）
+- `npm test`：✅ 75/75（compress 12 + presets 45 + ledger 18）
+- H5（dev，:5174）：采集页 20/20 实测取数成功
+- `npm run build:mp-weixin`：✅ DONE
+
+### 13.4 诚实局限（已写入 PERF_REPORT §5）
+
+- 数据为 **H5 程序化合成样张**，非真机；**iOS 端无 OOM 需在 D8 拍照→压缩链路前真机复核**。
+- 单次测量（非冷/热各 5 次取中位数），s08/s10 有 2.1s 级 GC/大 Blob 分配尖峰。
+- 小程序端采集跳过（canvas 合成 H5-only），MP 端正确性由单测 + D8 真机路径兜底。
+
+### 13.5 当前 Git 状态（未提交，待本轮提交）
+
+```
+ M src/pages.json            （注册 pages/dev/compress）
+ M src/types/wx.d.ts         （getImageInfo/createImage/canvasToTempFilePath/getFileInfo）
+?? src/adapters/imaging.ts
+?? src/services/            （imaging/compress.ts + __tests__）
+?? src/pages/dev/compress.vue
+?? docs/PERF_REPORT.md
+```
+
+上一提交：`090ae70`（chore(style)：清理存量 stylelint 错误）。（另注 `.claude/`、`.trae/` 为工具生成未入库目录，沿用仓库卫生待办 §5.2，不随本轮提交。）
