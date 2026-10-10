@@ -653,3 +653,24 @@ D6 合规链路的**上线前手工步骤**（不入库，需在小程序后台�
 ### 15.6 当前 Git 状态（本轮提交后）
 
 D9 相关文件全部入库并推送 origin/main（`src/services/stats/`、`src/components/biz/DonutChart.vue`、`src/pages-stats/`、`src/pages-detail/`、`src/pages/profile/`、`src/utils/storage.ts`、`src/utils/format.ts`、`src/pages.json`、`src/pages/index/index.vue`、`src/components/biz/ConfirmCard.vue`、`src/pages-capture/index.vue`）。（`.claude/`、`.trae/` 工具生成目录继续不入库。）
+
+### 15.7 追加：H5 端渲染自测 + DonutChart 单测补齐（2026-10-10）
+
+> 本轮补两块：① 双端「确认不白屏」自测的 H5 部分实际执行；② 发现并补齐 DonutChart 缺单测（违反 AGENTS「新增组件必须附带测试」红线）。
+
+#### 15.7.1 H5 端自测结果（dev:h5 + 浏览器实测）
+
+- 首页：Hero（2026 年 10 月 / 统计 / 我的 / 本月支出 0.00）+ 空态「本月还没有账单」+ FAB，正常渲染无白屏。
+- 统计页 `/pages-stats`：月标签 + 本月支出/日均 KPI + 空态「本月还没有支出」，正常渲染无白屏。
+- 我的页 `/pages/profile`：账号 demo（未连接云端）/ 立即同步 / 记账提醒 / 清空本地缓存 / v0.1.0，正常渲染无白屏。
+- 拍照页 `/pages-capture`：从首页空态按钮可跳转，取景框 + 相册 / 手输入口正常。
+- 详情页 `/pages-detail`：直接访问（无 init 数据）骨架渲染正常（支出/收入/金额/商户/分类/日期/删除这笔账）；点击「删除这笔账」**wd-message-box 二次确认弹层正常弹出**（删除后不可恢复 / 取消 / 删除）。
+- 控制台：全程无 JS 报错；网络请求 200/304（仅 dev server favicon 404 遗留，非业务资源）。
+- 局限：无云端数据 → 首页/统计页只能验证空态/错误态与骨架，**DonutChart 有数据时的扇区绘制、乐观锁冲突、真实增删改链路待部署后真机验证**。
+
+#### 15.7.2 DonutChart 单测补齐
+
+- 问题：D9 提交中 `DonutChart.vue`（新增组件）缺 `__tests__`，违反 AGENTS 红线。
+- 修复：`withAlpha`（hex→rgba 纯函数）拆至新文件 `src/components/biz/DonutChart.utils.ts`（与 uni/canvas 解耦），组件 import 复用；新增 `src/components/biz/__tests__/DonutChart.spec.ts`（6 用例：4 组 hex→rgba 映射 + 非法 hex 原样返回 + 去空白解析）。
+- 验证：`npm test` 111/111 ✅（+6）；`type-check` / `lint` / 双端 build 全绿 ✅。
+- 提交：`f597f3a`（test(donut)）已推送 origin/main。
