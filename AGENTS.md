@@ -128,7 +128,7 @@
 - **改视觉 / 组件规格前** → 先读 `docs/UI_SPEC.md`（§2 Tokens、§2.7 变量命名约定、§4 组件清单）
 - **做架构决策、动分层 / 适配层 / 分包前** → 先读 `docs/ARCHITECTURE.md`
   （§1.2 关键决策与被否方案、§3.5 组件库主题桥接、§4 关键子系统设计）
-- **判断某功能是否在范围内** → 查 `docs/SPEC.md`（能力补齐矩阵 + 验收标准）
+- **判断某功能是否在范围内** → 查 `.agents/spec/SPEC.md`（能力补齐矩阵 + 验收标准）
 - **确认今天做什么、做到什么程度** → 查 `docs/DEV_PLAN.md`（当日任务与 DoD）
 - **排查组件库问题** → 直读 `node_modules/wot-design-uni/components/common/abstracts/variable.scss`，**不要猜变量名**
 - **执行发布 / 交付流程** → 走 `docs/DEV_PLAN.md §7` 交付检查清单，逐项打勾
