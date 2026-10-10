@@ -28,6 +28,7 @@
  */
 import { onMounted, ref, watch } from 'vue';
 import { getDpr } from '@/adapters/imaging';
+import { withAlpha } from './DonutChart.utils';
 
 export interface DonutSlice {
   /** 分类 key（仅用于事件回传；绘制权重用 value） */
@@ -144,16 +145,7 @@ function draw(): void {
   });
 }
 
-/** 把 hex → `rgba(hex, alpha)`，供未选中扇区降透明。 */
-function withAlpha(hex: string, alpha: number): string {
-  const m = /^#?([0-9a-f]{6})$/i.exec(hex.replace(/\s/g, ''));
-  if (!m) return hex;
-  const n = parseInt(m[1], 16);
-  const r = (n >> 16) & 255;
-  const g = (n >> 8) & 255;
-  const b = n & 255;
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-}
+/** 把 hex → `rgba(hex, alpha)`，供未选中扇区降透明。实现与单测见 `DonutChart.utils.ts`。 */
 
 function onTap(e: { detail: { x: number; y: number } }): void {
   const x = e.detail.x - props.size / 2;
