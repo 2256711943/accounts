@@ -69,3 +69,16 @@ export function monthStartTicks(offset = 0, now = Date.now()): number {
   const d = new Date(now);
   return new Date(d.getFullYear(), d.getMonth() + offset, 1, 0, 0, 0, 0).getTime();
 }
+
+/** 返回某时间戳所属的 `YYYY-MM`（`stats.monthly` 的入参键）。不足位补 0。 */
+export function monthKey(ticks = Date.now()): string {
+  const d = new Date(ticks);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+
+/** 某月有多少天（用于统计页「日均」分母）。给到 `YYYY-MM`。 */
+export function daysInMonth(key: string): number {
+  const [y, m] = key.split('-').map(Number);
+  if (!y || !m || m < 1 || m > 12) return 30;
+  return new Date(y, m, 0, 0, 0, 0, 0).getDate();
+}

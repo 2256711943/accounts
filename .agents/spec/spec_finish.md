@@ -601,3 +601,55 @@ D6 合规链路的**上线前手工步骤**（不入库，需在小程序后台�
 ```
 
 上一提交：`fb68e10`（feat(imaging)：D7 压缩管线 + 20 张样张实测数据）。（另注 `.claude/`、`.trae/` 为工具生成未入库目录，沿用仓库卫生待办 §5.2，不随本轮提交。）
+
+---
+
+## 15. D9 · 明细/详情/统计（M3 业务闭环）
+
+> 更新时间：2026-10-10 ｜ 对应 `docs/DEV_PLAN.md` **D9**（M3 闭环：详情页 + 统计页 + 环图 + 我的页 + 全链路自测）
+> 结论：**D9 业务闭环代码完成并双端 build/type-check/lint/test 全绿**——DonutChart 自绘环图（简历亮点本体）+ 详情页"修改即保存/删除二次确认" + 统计页（客户端聚合 + 环比 + 分类占比）+ 我的页 + 首页接线跳转。受限于"不部署云端"，全链路真机录屏留待部署后验证（如实标注局限）。
+
+### 15.1 已完成清单
+
+- **`src/services/stats/aggregate.ts`**（新建）：纯函数 `computeMonthly(records, monthKey)` → `StatsMonthlyData`（只统计 expense，ring 占比和 =1，avg=total/daysInMonth）。顶层 import `@/utils/format`。
+- **`src/services/stats/__tests__/aggregate.spec.ts`**（新建，6 用例）：`vi.mock('@/utils/format')` 短路；`rec` helper 默认 expense，income 用例显式传 `type:'income'`。
+- **`src/components/biz/DonutChart.vue`**（新建，亮点本体）：props `slices/colors/size/thickness/trackColor/centerValue/centerLabel`，emit `change(index)`；`setupCanvas()` 用 `.node(cb).exec()`（非 Promise cast）；draw() 内 `const c/g` 本地别名规避嵌套闭包 `let` 窄化失效；dpr 适配（`getDpr` from `@/adapters/imaging`）；扇区点击极坐标命中高亮（选中外扩 4px + withAlpha 降透明）。SCSS 相对路径 `../../styles/tokens`。
+- **`src/pages-stats/index.vue`**（新建）：客户端聚合 `fetchWindow(since)` 循环 `record.list`（PAGE=100，CAP=2000）按 `happenedAt` 分本月/上月 → `computeMonthly`；环比徽标 `mo2NBadge`、环图中心联动 `centerValue/centerLabel`、分类占比条。模板用 `monthLabel(thisMonthKey)`（避传函数）。SCSS `../styles/tokens`（分包一层上到 src）。
+- **`src/pages-detail/index.vue`**（新建）："修改即保存" `record.upsert` op:'update' + `baseVersion` 乐观锁，冲突 `res.conflict → apply(res.record)`；删除 Feedback `message.confirm` 二次确认 → `record.remove`；事件通道 `getOpenerEventChannel().on('init', ...)` 接收首页传入记录；input 事件 `(e:unknown)` + 窄化 `detail?.value`。
+- **`src/pages/profile/index.vue`**（新建）：`user.login`（H5 无云 SDK catch → "demo 未连接云端"）、提醒开关 stub、清缓存（`utils/storage` 字节态）、版本号连点 5 次 → 开发面板入口。SCSS `../../styles/tokens`。
+- **`src/utils/storage.ts`**（新建）：`getStorageSizeBytes/Label`，MP `getStorageInfoSync` / H5 遍历 localStorage，H5 循环 `const k: string = localStorage.key(i) ?? ''` 避 null 窄化。
+- **`src/utils/format.ts`**（改）：新增 `monthKey(ticks)`、`daysInMonth(key)`。
+- **`src/pages.json`**（改）：主包新增 `pages/profile/index`；subPackages 新增 `pages-stats`、`pages-detail`。
+- **`src/pages/index/index.vue`**（改）：Hero 增加 `hero__top`（月标签 + 统计/我的跳转）；`onTapItem` 用 `success:(res)=>res.eventChannel.emit('init', item)` 带记录跳详情；新增 `onTapStats` / `onTapProfile` 入口。
+- **`src/components/biz/ConfirmCard.vue`**（改）：金额无效 `uni.showToast('请填写有效金额')`。
+- **`src/pages-capture/index.vue`**（改）：手输模式 `manualMode` ref，`onManual` 构造空 `RecognizeCandidate` 复用 ConfirmCard，`onConfirm` 按 `manualMode` 记 `source:'manual'|'photo'`。
+
+### 15.2 验证
+
+- `npm run type-check`：✅（strict）
+- `npm run lint`：✅（eslint + stylelint 全绿）
+- `npm test`：✅ 105/105（新增 aggregate 6 用例）
+- `npm run build:mp-weixin`：✅ DONE
+- `npm run build:h5`：✅ DONE
+
+### 15.3 关键决策
+
+- **统计页数据源不改云端**：`stats.monthly` 云函数未实现（守"不部署"边界），改用**客户端聚合**（`record.list` 循环 + `computeMonthly`），返回结构与 `StatsMonthlyData` 一致，将来可换云函数零改动页面。
+- **手输/拍照共用 ConfirmCard**：用 `manualMode` ref 区分 `source`，不新增第二套 UI。
+
+### 15.4 踩坑修复
+
+- **DonutChart 新 canvas 类型**：`.node(...)` cast Promise 报 TS2352 + ctx possibly null（18047 多行），改 `setupCanvas()` `.node(cb).exec()` 模式。
+- **draw() 内 `let` 模块变量窄化失效**：`let canvas/ctx` 在嵌套闭包（`valid.forEach`）内被重新赋值后 TS 丢失窄化 → 局部 `const c/g` 别名。
+- **detail `message.confirm` 返回值类型**：回调参数 `(res as { confirm?: boolean }).confirm` 判断。
+- **stats 模板误传函数**：`monthLabel(monthKey)` → `monthLabel(thisMonthKey)`。
+- **SCSS token 相对路径**：分包页面一层上到 `src/` 用 `../styles/tokens`；components/biz 两层上用 `../../styles/tokens`。
+
+### 15.5 诚实局限
+
+- **全链路真机录屏 v1 未完成**：受制于"不部署云端"，`record.list/upsert/remove` 无真实可达后端，H5/真机无法跑通"记 10 笔→改 2 笔→删 1 笔→看统计"录制。前端逻辑（聚合/环图/乐观锁/删除确认）已单测 + 双端 build 通过，待部署后补真机全链路自测与 PERF_REPORT 数据。
+- 我的页"登录态/提醒"为 UI stub，接入真实登录态依赖云端部署。
+
+### 15.6 当前 Git 状态（本轮提交后）
+
+D9 相关文件全部入库并推送 origin/main（`src/services/stats/`、`src/components/biz/DonutChart.vue`、`src/pages-stats/`、`src/pages-detail/`、`src/pages/profile/`、`src/utils/storage.ts`、`src/utils/format.ts`、`src/pages.json`、`src/pages/index/index.vue`、`src/components/biz/ConfirmCard.vue`、`src/pages-capture/index.vue`）。（`.claude/`、`.trae/` 工具生成目录继续不入库。）

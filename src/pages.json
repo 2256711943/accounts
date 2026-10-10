@@ -35,9 +35,16 @@
 			"style": {
 				"navigationBarTitleText": "压缩采集"
 			}
+		},
+		// 我的页：登录态 / 提醒 / 清缓存 / 版本隐藏入口（D9）
+		{
+			"path": "pages/profile/index",
+			"style": {
+				"navigationBarTitleText": "我的"
+			}
 		}
 	],
-	// 普通分包（D12 起独立分包）：拍照页打包进分包，避免撑大主包体积预算。
+	// 普通分包（D12 起独立分包）：拍照页、统计页、详情页打包进分包，避免撑大主包体积预算。
 	"subPackages": [
 		{
 			"root": "pages-capture",
@@ -47,6 +54,28 @@
 					"style": {
 						"navigationStyle": "custom",
 						"navigationBarTitleText": "拍照记账"
+					}
+				}
+			]
+		},
+		{
+			"root": "pages-stats",
+			"pages": [
+				{
+					"path": "index",
+					"style": {
+						"navigationBarTitleText": "统计"
+					}
+				}
+			]
+		},
+		{
+			"root": "pages-detail",
+			"pages": [
+				{
+					"path": "index",
+					"style": {
+						"navigationBarTitleText": "账单详情"
 					}
 				}
 			]

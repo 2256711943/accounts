@@ -5,9 +5,15 @@
       <text class="offline-bar__text">当前无网络，记账会先存在本地</text>
     </view>
 
-    <!-- 顶部 Hero：月份 + 本月总支出 -->
+    <!-- 顶部 Hero：月份 + 本月总支出 + 跳统计/我的入口 -->
     <view class="hero">
-      <text class="hero__month">{{ monthLabel }}</text>
+      <view class="hero__top">
+        <text class="hero__month">{{ monthLabel }}</text>
+        <view class="hero__links">
+          <text class="hero__link" @tap="onTapStats">统计</text>
+          <text class="hero__link" @tap="onTapProfile">我的</text>
+        </view>
+      </view>
       <text class="hero__label">本月支出（元）</text>
       <text class="hero__amount">{{ expenseTotalLabel }}</text>
     </view>
@@ -222,8 +228,20 @@ function onLoadMore() {
   store.loadMore();
 }
 function onTapItem(item: LedgerRecord) {
-  // 详情页 D8 接入；暂反馈
-  uni.showToast({ title: `${categoryName(item.categoryId)} ${fenToYuan(item.amount)} 元`, icon: 'none' });
+  // 详情页（D9）：事件通道把当前记录透传，详情页「修改即保存」
+  uni.navigateTo({
+    url: `/pages-detail/index?clientId=${item.clientId}`,
+    events: { init: () => undefined },
+    success: (res) => {
+      res.eventChannel.emit('init', item);
+    },
+  });
+}
+function onTapStats() {
+  uni.navigateTo({ url: '/pages-stats/index' });
+}
+function onTapProfile() {
+  uni.navigateTo({ url: '/pages/profile/index' });
 }
 function onTapFab() {
   // 拍照页 D6 接入：轻震反馈 + 跳分包页面（平台差异收敛在 adapters/system）
@@ -268,6 +286,24 @@ function onTapFab() {
   background-color: $color-bg-surface;
   border-radius: $r-lg;
   box-shadow: $sh-1;
+
+  &__top {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  &__links {
+    display: flex;
+    flex-direction: row;
+    gap: $sp-3;
+  }
+
+  &__link {
+    font-size: $fs-caption;
+    color: $color-accent;
+  }
 
   &__month {
     font-size: $fs-caption;

@@ -106,7 +106,8 @@ function onDateChange(e: { detail: { value: string } }): void {
 function onConfirm(): void {
   const yuan = Number(amountYuan.value);
   if (!Number.isFinite(yuan) || yuan <= 0) {
-    // 金额必填：用轻提示可由调用方处理；此处保守地不 emit 已校验载荷
+    // 金额必填：轻提示（native uni 接口，组件内可用；非 wd-toast）
+    uni.showToast({ title: '请填写有效金额', icon: 'none' });
     return;
   }
   const happenedAt = new Date(`${dateStr.value}T00:00:00`).getTime();

@@ -121,6 +121,8 @@ const picking = ref(false);
 const processing = ref(false);
 /** D8：识别候选（非空 → 弹出确认卡） */
 const candidate = ref<RecognizeCandidate | null>(null);
+/** D9：是否手输模式（决定 `LedgerRecord.source` 为 manual / photo） */
+const manualMode = ref(false);
 /** D8：压缩产物的 imageFileId（上传成功后才有；失败/不支持则留空降级） */
 const imageFileId = ref('');
 /** D8：保存中（防重复提交） */
@@ -155,6 +157,7 @@ function handlePick(res: MediaPickResult) {
 async function startFlow(src: string) {
   if (processing.value) return;
   candidate.value = null;
+  manualMode.value = false;
   imageFileId.value = '';
   processing.value = true;
   try {
@@ -196,7 +199,7 @@ async function onConfirm(payload: {
       categoryId: payload.categoryKey,
       merchant: payload.merchant,
       happenedAt: payload.happenedAt,
-      source: 'photo',
+      source: manualMode.value ? 'manual' : 'photo',
       imageFileId: imageFileId.value ? imageFileId.value : undefined,
       recognizeMeta: meta,
     };
@@ -231,8 +234,17 @@ async function onAlbum() {
 }
 
 function onManual() {
-  // D8 接手动录入表单；此处 stub
-  uni.showToast({ title: '手输表单 D8 接入', icon: 'none' });
+  // 手输（D9）：复用确认卡作真实表单——预填空候选（金额留空由用户填，source=manual）
+  manualMode.value = true;
+  candidate.value = {
+    amount: undefined,
+    merchant: undefined,
+    categoryKey: 'other',
+    confidence: 0.5,
+    engine: 'rule0',
+    degraded: false,
+    costMs: 0,
+  };
 }
 
 async function onOpenSetting() {
