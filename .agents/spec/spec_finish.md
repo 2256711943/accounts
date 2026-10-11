@@ -674,3 +674,38 @@ D9 相关文件全部入库并推送 origin/main（`src/services/stats/`、`src/
 - 修复：`withAlpha`（hex→rgba 纯函数）拆至新文件 `src/components/biz/DonutChart.utils.ts`（与 uni/canvas 解耦），组件 import 复用；新增 `src/components/biz/__tests__/DonutChart.spec.ts`（6 用例：4 组 hex→rgba 映射 + 非法 hex 原样返回 + 去空白解析）。
 - 验证：`npm test` 111/111 ✅（+6）；`type-check` / `lint` / 双端 build 全绿 ✅。
 - 提交：`f597f3a`（test(donut)）已推送 origin/main。
+
+### 15.8 追加：云端最小闭环部署 + 真实链路自检（2026-10-11）
+
+> 用户批准 dry-run 方案后执行。云端 ledger 自 D4 已部署，本次为**幂等重部署**确保云端 = 本地最新代码，并首次打通真实增删改查链路（解除 §15.5「全链路真机录屏未完成」的后端阻塞）。
+
+#### 15.8.1 部署动作
+
+- `tcb fn deploy ledger --force`：✅ 部署成功（COS 上传，2026-10-11 14:39:53）。
+- `tcb fn detail ledger` 复验配置：`timeout 20s` / `Nodejs16.13` / `memory 256MB` / `handler index.main` / `installDependency TRUE`，与 cloudbaserc.json 一致。
+- 未触碰：MODEL_API_KEY、recognize.image / stats.monthly / record.batchSync、上传中转（守既有边界）。
+
+#### 15.8.2 链路自检结果
+
+**无身份写入被拒（_openid 隔离正向验证）**：CLI `record.upsert`（无微信 OPENID）→ `{"ok":false,"error":{"code":"INVALID_PARAM","message":"无法解析归属身份"}}`，无身份不可写 ✅
+
+**H5 HTTP 网关全链路**（`POST https://cloud1-…tcloudbase.com/ledger/<action>`，demo 身份 `h5-demo-single-user`）：
+| 步骤 | 动作 | 结果 |
+|---|---|---|
+| 1 | ping | `{ok:true, data:{source:'http', ownerId:'h5-demo-single-user'}}` ✅ |
+| 2 | record.upsert create | 写 1 笔成功，`_openid` 落 demo 身份、`version:1` ✅ |
+| 3 | record.list | 读回含新记录 + D4 遗留 verify-dod-1（demo 数据持久）✅ |
+| 4 | record.upsert update | 乐观并发 `version 1→2`，amount 1250→1350 ✅ |
+| 5 | record.remove | 软删 `deleted:true` 成功 ✅ |
+| 6 | record.list 复查 | 目标 clientId 残留 0，verify-dod-1 仍在（删只影响目标记录）✅ |
+
+#### 15.8.3 工具链经验（供后续部署复用）
+
+- **PowerShell 无法直接传 JSON 给 `tcb fn invoke --params`**（`\"` 转义损坏，报「不是有效的 JSON」）：改用 Node `spawnSync` 传参数数组调用 tcb 的 JS 入口（`node …/node_modules/@cloudbase/cli/bin/tcb`），或脚本从 JSON 文件读 payload。
+- 本版 tcb CLI（3.8.6）无 `fn deploy --dry-run`，`--force` 覆盖同名函数。
+- 所有 `tcb` 命令需 `dangerouslyDisableSandbox`（auth 配置在沙箱外）。
+
+#### 15.8.4 后续待办
+
+- §15.5 的「全链路真机录屏 v1」现已解锁后端：可在微信开发者工具 + H5 跑「记 10 笔→改 2 笔→删 1 笔→看统计」并录制 PERF_REPORT。
+- 本轮无代码改动（纯云端操作），工作区干净，无新增提交。
