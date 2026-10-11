@@ -5,6 +5,12 @@
       <text class="offline-bar__text">当前无网络，记账会先存在本地</text>
     </view>
 
+    <!-- 待同步条（D10 离线队列）：有待同步账单时展示，点击手动触发补传 -->
+    <view v-if="store.pendingCount > 0" class="pending-bar" @tap="onTapSyncNow">
+      <text class="pending-bar__text">{{ store.pendingCount }} 条账单待同步</text>
+      <text class="pending-bar__action">{{ store.online ? '立即同步 ›' : '联网后自动同步' }}</text>
+    </view>
+
     <!-- 顶部 Hero：月份 + 本月总支出 + 跳统计/我的入口 -->
     <view class="hero">
       <view class="hero__top">
@@ -68,7 +74,10 @@
             <text class="item__title">{{ item.merchant || categoryName(item.categoryId) }}</text>
             <text class="item__sub">{{ categoryName(item.categoryId) }} · {{ timeText(item.happenedAt) }}</text>
           </view>
-          <text class="item__amount">{{ (item.type === 'expense' ? '-' : '+') + fenToYuan(item.amount) }}</text>
+          <view class="item__right">
+            <text v-if="store.pendingIds.has(item.clientId)" class="item__badge">待同步</text>
+            <text class="item__amount">{{ (item.type === 'expense' ? '-' : '+') + fenToYuan(item.amount) }}</text>
+          </view>
         </view>
       </view>
 
@@ -243,6 +252,15 @@ function onTapStats() {
 function onTapProfile() {
   uni.navigateTo({ url: '/pages/profile/index' });
 }
+function onTapSyncNow() {
+  void store.flush().then((summary) => {
+    if (summary?.interrupted) {
+      uni.showToast({ title: '网络不可用，稍后再试', icon: 'none' });
+    } else if (summary && summary.failed > 0) {
+      uni.showToast({ title: `已同步 ${summary.synced} 条，${summary.failed} 条稍后重试`, icon: 'none' });
+    }
+  });
+}
 function onTapFab() {
   // 拍照页 D6 接入：轻震反馈 + 跳分包页面（平台差异收敛在 adapters/system）
   vibrateShort('light');
@@ -274,6 +292,29 @@ function onTapFab() {
   &__text {
     font-size: $fs-caption;
     color: $color-bg-surface;
+  }
+}
+
+/* 待同步条（D10） */
+.pending-bar {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  height: 48rpx;
+  padding: 0 $sp-3;
+  margin-bottom: $sp-4;
+  background-color: $color-accent-soft;
+  border-radius: $r-sm;
+
+  &__text {
+    font-size: $fs-caption;
+    color: $color-accent;
+  }
+
+  &__action {
+    font-size: $fs-caption;
+    color: $color-accent;
   }
 }
 
@@ -464,6 +505,18 @@ function onTapFab() {
   &__sub {
     font-size: $fs-caption;
     color: $color-text-secondary;
+  }
+
+  &__right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: $sp-1;
+  }
+
+  &__badge {
+    font-size: $fs-tiny;
+    color: $color-warning;
   }
 
   &--expense &__amount {

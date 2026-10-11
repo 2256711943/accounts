@@ -91,6 +91,25 @@ function validate(action, payload) {
       }
       return null;
     }
+    case 'record.batchSync': {
+      const { tasks } = payload;
+      if (!Array.isArray(tasks) || tasks.length === 0 || tasks.length > 50) {
+        return { code: ERR.INVALID_PARAM, message: 'tasks 必须是 1–50 的数组' };
+      }
+      for (const t of tasks) {
+        if (
+          !isPlainObject(t) ||
+          typeof t.taskId !== 'string' ||
+          t.taskId.length === 0 ||
+          typeof t.clientId !== 'string' ||
+          t.clientId.length === 0 ||
+          !['create', 'update', 'delete'].includes(t.op)
+        ) {
+          return { code: ERR.INVALID_PARAM, message: '任务缺少 taskId/clientId 或 op 非法' };
+        }
+      }
+      return null;
+    }
     default:
       return null;
   }
@@ -228,6 +247,35 @@ function createLedgerHandlers({ db, now = Date.now } = {}) {
     return ok({ ok: true });
   }
 
+  /**
+   * 恢复网络后批量补传（D10 离线队列上行接口，减少往返）。
+   * 按数组顺序**串行**处理，保证同一 clientId 的操作有序（与客户端队列同序）。
+   * 每个任务复用 upsert / remove 的单条语义，结果逐条回执给客户端：
+   *   { taskId, ok, conflict?, record?, error? } —— 冲突时携带服务端最新文档供客户端 LWW。
+   */
+  async function handleBatchSync({ tasks }, ownerId) {
+    const results = [];
+    for (const t of tasks) {
+      if (t.op === 'delete') {
+        const res = await handleRemove({ clientId: t.clientId }, ownerId);
+        results.push({ taskId: t.taskId, ok: res.ok, error: res.ok ? undefined : res.error.code });
+        continue;
+      }
+      const res = await handleUpsert(
+        { clientId: t.clientId, op: t.op, payload: t.payload, baseVersion: t.baseVersion },
+        ownerId
+      );
+      results.push({
+        taskId: t.taskId,
+        ok: res.ok,
+        conflict: res.ok ? res.data.conflict : undefined,
+        record: res.ok ? res.data.record : undefined,
+        error: res.ok ? undefined : res.error.code,
+      });
+    }
+    return ok({ results });
+  }
+
   return {
     ERR,
     COLLECTION,
@@ -236,6 +284,7 @@ function createLedgerHandlers({ db, now = Date.now } = {}) {
     handleUpsert,
     handleList,
     handleRemove,
+    handleBatchSync,
   };
 }
 

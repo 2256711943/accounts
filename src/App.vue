@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onLaunch } from '@dcloudio/uni-app';
 import { usePrivacyStore } from '@/stores/privacy';
+import { useRecordStore } from '@/stores/record';
 
 /**
  * 应用级生命周期。
@@ -11,6 +12,8 @@ import { usePrivacyStore } from '@/stores/privacy';
 onLaunch(() => {
   // D6：注册《隐私保护指引》回调（H5 端为空实现，恒不弹）
   usePrivacyStore().init();
+  // D10：账单缓存直出 + 网络监听（恢复网络自动补传离线队列）
+  useRecordStore().init();
   // TODO(D13): perf.mark('launch')
 });
 </script>

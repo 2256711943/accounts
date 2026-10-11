@@ -45,3 +45,67 @@ export function vibrateShort(type: 'heavy' | 'medium' | 'light' = 'light'): void
   }
   // #endif
 }
+
+/**
+ * 网络状态变化订阅（D10 离线队列：断网/恢复时驱动同步调度）。
+ * 返回退订函数；能力缺失时退订为 no-op（永不抛，红线 6）。
+ */
+export function onNetworkChange(cb: (online: boolean) => void): () => void {
+  // #ifdef MP-WEIXIN
+  try {
+    if (typeof wx.onNetworkStatusChange === 'function') {
+      const handler = (res: WxNetwork.StatusResult) => cb(!!res.isConnected);
+      wx.onNetworkStatusChange(handler);
+      return () => {
+        try {
+          wx.offNetworkStatusChange(handler);
+        } catch {
+          /* 忽略 */
+        }
+      };
+    }
+  } catch {
+    /* 能力缺失：落到 no-op */
+  }
+  // #endif
+  // #ifdef H5
+  if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+    const onOnline = () => cb(true);
+    const onOffline = () => cb(false);
+    window.addEventListener('online', onOnline);
+    window.addEventListener('offline', onOffline);
+    return () => {
+      window.removeEventListener('online', onOnline);
+      window.removeEventListener('offline', onOffline);
+    };
+  }
+  // #endif
+  return () => {};
+}
+
+/**
+ * 查询当前在线状态（初始判定）。能力缺失/查询失败 → 默认在线
+ * （离线由后续同步失败 + 队列兜底，不阻塞首屏）。
+ */
+export function getNetworkState(cb: (online: boolean) => void): void {
+  // #ifdef MP-WEIXIN
+  try {
+    if (typeof wx.getNetworkType === 'function') {
+      wx.getNetworkType({
+        success: (res) => cb(!!res.isConnected),
+        fail: () => cb(true),
+      });
+      return;
+    }
+  } catch {
+    /* 落到默认 */
+  }
+  // #endif
+  // #ifdef H5
+  if (typeof navigator !== 'undefined' && typeof navigator.onLine === 'boolean') {
+    cb(navigator.onLine);
+    return;
+  }
+  // #endif
+  cb(true);
+}

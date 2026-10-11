@@ -81,8 +81,16 @@ export interface RecordRemoveData {
 export interface RecordBatchSyncPayload {
   tasks: SyncTask[];
 }
+/** 单任务回执：ok/conflict 判定 + 服务端最新文档（供客户端 LWW 采纳） */
+export interface RecordBatchSyncResult {
+  taskId: string;
+  ok: boolean;
+  conflict?: boolean;
+  record?: LedgerRecord;
+  error?: string;
+}
 export interface RecordBatchSyncData {
-  results: Array<{ taskId: string; ok: boolean; conflict?: boolean }>;
+  results: RecordBatchSyncResult[];
 }
 
 // ---------- stats.monthly ----------

@@ -709,3 +709,50 @@ D9 相关文件全部入库并推送 origin/main（`src/services/stats/`、`src/
 
 - §15.5 的「全链路真机录屏 v1」现已解锁后端：可在微信开发者工具 + H5 跑「记 10 笔→改 2 笔→删 1 笔→看统计」并录制 PERF_REPORT。
 - 本轮无代码改动（纯云端操作），工作区干净，无新增提交。
+
+---
+
+## §16 D10 离线队列（亮点 H3）实现完成 — 2026-10-11
+
+### 16.1 本轮完成清单
+
+**云函数 batchSync（离线批量补传上行接口）**
+- cloudfunctions/ledger/logic.js：validate 新增 record.batchSync case（tasks 1–50 数组、taskId/clientId 必填、op 白名单）；handleBatchSync 按数组顺序**串行**复用 upsert/remove 单条语义，逐条回执 { taskId, ok, conflict?, record?, error? }。
+- cloudfunctions/ledger/index.js：路由注册 record.batchSync。
+- src/types/api.ts：RecordBatchSyncResult 增加 record?/error?。
+- cloudfunctions/ledger/__tests__/ledger.spec.mjs：+6 用例（数组边界/任务字段校验、串行落库、conflict 回执带服务端文档、单条失败不拖累他条、_openid 隔离）。
+
+**services/sync 离线优先三件套（本地持久化）**
+- src/services/sync/queue.ts：sl:sync:queue；入队同 clientId 合并（delete 终态取代、update 字段级合并保留最早 baseVersion、tries 归零）；computeBackoffMs 指数退避；MAX_TRIES=5 超限标记同步失败。
+- src/services/sync/snapshot.ts：sl:records:cache 缓存直出 + 乐观落点（upsert/remove 按 clientId）。
+- src/services/sync/flush.ts：串行出队上行，优先 record.batchSync，云端旧版 UNKNOWN_ACTION/INVALID_PARAM 自动退化逐条 record.upsert/remove；每轮 flush 每任务只尝试一次（attempted Set）；NETWORK 整轮中断；单条失败 bumpTries + requeueToTail；**delete 成功同步后同步移除本地快照**（修正初版缺口）。
+- 单测：queue.spec.ts(16) / snapshot.spec.ts(7) / flush.spec.ts(8)，共享 storage-mock.ts stub 全局 uni storage。
+
+**适配层 / store / 页面接线**
+- src/adapters/system.ts：onNetworkChange（MP wx.onNetworkStatusChange / H5 window online·offline）+ getNetworkState（初始在线判定，能力缺失默认在线）；src/types/wx.d.ts 补 WxNetwork 类型。
+- src/stores/record.ts：缓存直出（init 先快照上屏再静默拉服务端）+ 乐观 createLocal/updateLocal/removeLocal（本地快照+队列立即上屏，在线自动 flush）+ pendingCount/pendingIds/online 状态 + flush/resetLocal。
+- 页面：首页待同步条 + 列表项「待同步」徽标 + 点击立即同步；capture onConfirm → store.createLocal（离线可记）；detail save/remove → store.updateLocal/removeLocal；profile「立即同步」接真实 flush + 清缓存后 resetLocal；App.vue onLaunch 接 useRecordStore().init()。
+
+### 16.2 验证证据
+
+| 检查 | 结果 |
+|---|---|
+| npm run test:ledger | 24 passed ✅ |
+| npm test（全量） | 148 passed（10 files）✅ |
+| npm run type-check | 0 error ✅ |
+| npm run lint（eslint + stylelint） | 0 error ✅ |
+| npm run build:h5 / build:mp-weixin | 均 DONE ✅ |
+| H5 dev 首页冒烟（browser_use） | 渲染正常、无控制台报错 ✅ |
+| tcb fn deploy ledger --force（2026-10-11） | 部署成功，record.batchSync 云端上线 ✅ |
+| HTTP 网关 batchSync 直测（create×2 + delete×1，ownerId=h5-demo-single-user） | 逐条回执全 ok；list 复查仅存 1 条（软删过滤生效）✅ |
+| H5 离线手测 4 阶段（断网新增 3 笔 → 联网自动同步，browser_use） | DoD 全 PASS：断网 3 笔立即上屏且标记「待同步」；dispatch online 后 5 秒内待同步条消失、3 笔保留无标记、控制台无业务报错 ✅ |
+
+### 16.3 设计要点（写进简历的句子）
+
+「离线优先同步：本地快照 + 同步队列 + 水位，断网新增/编辑/删除即时上屏并标记待同步，恢复网络自动批量补传（batchSync 一次往返），云端旧版自动退化逐条；幂等键 (clientId,_openid) + 乐观并发 version + LWW 后写胜出。」
+
+### 16.4 当前 Git 状态与后续待办
+
+- ✅ 云端部署已完成（2026-10-11）：`tcb fn deploy ledger --force` 使 `record.batchSync` 上线（此前 H5 走逐条退化路径）；HTTP 网关直测 create×2 + delete×1 逐条 ok，list 复查软删过滤生效。
+- ✅ D10 DoD 手测已完成（H5，browser_use + `dispatchEvent(new Event('offline'/'online'))` 模拟断网/联网）：断网新增 3 笔（商户 D10-offline-1/2/3）→ UI 立即显示且标记「待同步」；恢复网络 → 5 秒内待同步条消失、3 笔保留在列表且无标记，控制台无业务报错。
+- 待办：D10 DoD 真机录屏自测（微信开发者工具真机模式，含小程序端网络切换）；D11 列表项「重试」按钮等后续。

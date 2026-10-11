@@ -101,6 +101,24 @@ namespace WxPrivacy {
   }
 }
 
+/** 网络状态（D10 离线队列监听用）。 */
+namespace WxNetwork {
+  interface StatusResult {
+    isConnected: boolean;
+    networkType: string;
+    errMsg?: string;
+  }
+  interface GetNetworkTypeResult {
+    isConnected: boolean;
+    networkType: string;
+    errMsg?: string;
+  }
+  interface GetNetworkTypeOption {
+    success?: (res: GetNetworkTypeResult) => void;
+    fail?: (res: { errMsg?: string }) => void;
+  }
+}
+
 interface WxNamespace {
   /** H5 端不存在该属性；小程序端恒存在 */
   cloud?: WxCloud.CloudNamespace;
@@ -117,6 +135,13 @@ interface WxNamespace {
 
   /** 系统轻震 */
   vibrateShort(option?: { type?: 'heavy' | 'medium' | 'light' }): void;
+
+  /** 当前网络状态（初始在线判定） */
+  getNetworkType(option: WxNetwork.GetNetworkTypeOption): void;
+  /** 网络状态变化监听（D10：断网/恢复触发同步） */
+  onNetworkStatusChange(callback: (res: WxNetwork.StatusResult) => void): void;
+  /** 取消网络状态监听 */
+  offNetworkStatusChange(callback: (res: WxNetwork.StatusResult) => void): void;
 
   /** 隐私接口被调用前触发，用于弹出自有《隐私保护指引》 */
   onNeedPrivacyAuthorization(callback: (resolve: WxPrivacy.Resolve) => void): void;

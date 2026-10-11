@@ -82,12 +82,13 @@
  * D9 详情页（普通分包 `pages-detail`）——「修改即保存」。
  *
  * - 首页经事件通道把初始记录透传过来（避免按 clientId 单独再拉一次，也没有单查接口）。
- * - 字段改动即写：`record.upsert` op:'update' + `baseVersion`（乐观并发，冲突交由服务端 LWW）。
- * - 删除：`record.remove`，前置 `wd-message-box` 二次确认（唯一宿主 Feedback 组件）。
+ * - 字段改动即写（D10 乐观更新）：`store.updateLocal` 入同步队列 + 快照合并立即上屏，
+ *   在线自动补传；冲突由 flush 采纳服务端最新文档（LWW，见 ARCHITECTURE.md §4.2）。
+ * - 删除：`store.removeLocal`（软删入队），前置 `wd-message-box` 二次确认（唯一宿主 Feedback 组件）。
  */
 import { computed, getCurrentInstance, ref } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
-import { call } from '@/api/client';
+import { useRecordStore } from '@/stores/record';
 import { CATEGORIES } from '@/services/recognize/categories';
 import Feedback from '@/components/biz/Feedback.vue';
 import type { LedgerRecord } from '@/types/model';
@@ -98,6 +99,7 @@ interface EventChannel {
 }
 
 const feedbackRef = ref<InstanceType<typeof Feedback> | null>(null);
+const recordStore = useRecordStore();
 
 const rec = ref<LedgerRecord | null>(null);
 const saving = ref(false);
@@ -122,26 +124,18 @@ function apply(r: LedgerRecord): void {
 }
 const catName = computed(() => CATEGORIES[catIndex.value]?.name ?? '未分类');
 
-/** 统一保存：字段级 patch → upsert(update)，冲突交给服务端已返回的文档 LWW。 */
+/**
+ * 统一保存（D10 乐观更新）：字段级 patch 入同步队列 + 快照合并，立即上屏；
+ * 在线自动补传，冲突由 flush 采纳服务端文档（LWW）。
+ */
 async function save(patch: Partial<LedgerRecord>): Promise<void> {
   const r = rec.value;
   if (!r || saving.value) return;
   saving.value = true;
   try {
-    const res = await call('record.upsert', {
-      clientId: r.clientId,
-      op: 'update',
-      baseVersion: r.version ?? 0,
-      payload: patch,
-    });
-    rec.value = res.record;
-    // 若冲突（服务端版本更新），以服务端文档为准整字段回写
-    if (res.conflict) {
-      apply(res.record);
-    }
+    recordStore.updateLocal(r.clientId, patch, r.version ?? 0);
+    rec.value = { ...r, ...patch };
     feedbackRef.value?.toast.show('已保存');
-  } catch (err) {
-    feedbackRef.value?.toast.show(err instanceof Error ? err.message : '保存失败');
   } finally {
     saving.value = false;
   }
@@ -192,13 +186,9 @@ function onDelete(): void {
 async function remove(): Promise<void> {
   const r = rec.value;
   if (!r) return;
-  try {
-    await call('record.remove', { clientId: r.clientId });
-    feedbackRef.value?.toast.show('已删除');
-    setTimeout(() => uni.navigateBack(), 500);
-  } catch (err) {
-    feedbackRef.value?.toast.show(err instanceof Error ? err.message : '删除失败');
-  }
+  recordStore.removeLocal(r.clientId);
+  feedbackRef.value?.toast.show('已删除');
+  setTimeout(() => uni.navigateBack(), 500);
 }
 
 onLoad(() => {

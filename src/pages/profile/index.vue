@@ -46,9 +46,11 @@
 import { ref } from 'vue';
 import { call } from '@/api/client';
 import { getStorageSizeLabel } from '@/utils/storage';
+import { useRecordStore } from '@/stores/record';
 
 const VERSION = '0.1.0';
 
+const recordStore = useRecordStore();
 const uidLabel = ref('未登录');
 const remindOn = ref(true);
 const cacheSize = ref('');
@@ -71,11 +73,25 @@ function onToggleRemind(e: { detail: boolean }): void {
   uni.showToast({ title: remindOn.value ? '已开启提醒' : '已关闭提醒', icon: 'none' });
 }
 function onSyncNow(): void {
-  uni.showToast({ title: '离线队列 D10 接入', icon: 'none' });
+  if (recordStore.pendingCount === 0) {
+    uni.showToast({ title: '没有待同步账单', icon: 'none' });
+    return;
+  }
+  void recordStore.flush().then((summary) => {
+    if (summary?.interrupted) {
+      uni.showToast({ title: '网络不可用，稍后再试', icon: 'none' });
+      return;
+    }
+    uni.showToast({
+      title: summary?.failed ? `同步 ${summary.synced} 条，${summary.failed} 条稍后重试` : '同步完成',
+      icon: 'none',
+    });
+  });
 }
 function onClearCache(): void {
   uni.clearStorageSync();
   refreshCache();
+  recordStore.resetLocal();
   uni.showToast({ title: '已清空缓存', icon: 'success' });
 }
 function onVersionTap(): void {

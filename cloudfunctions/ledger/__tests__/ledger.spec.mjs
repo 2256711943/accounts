@@ -253,3 +253,99 @@ describe('record.list · 分页与过滤', () => {
     expect(res.data.list.map((r) => r.clientId)).toEqual(['mine']);
   });
 });
+
+describe('record.batchSync · 批量补传（D10）', () => {
+  function task(overrides = {}) {
+    return {
+      taskId: 'task-1',
+      clientId: 'abc-1',
+      op: 'create',
+      payload: { type: 'expense', amount: AMOUNT, categoryId: 'food', happenedAt: AT, source: 'manual' },
+      baseVersion: 0,
+      ...overrides,
+    };
+  }
+
+  it('validate：tasks 非 1–50 数组 → INVALID_PARAM', () => {
+    expect(validate('record.batchSync', { tasks: [] }).code).toBe('INVALID_PARAM');
+    expect(validate('record.batchSync', { tasks: Array.from({ length: 51 }, () => task()) }).code).toBe('INVALID_PARAM');
+    expect(validate('record.batchSync', { tasks: 'nope' }).code).toBe('INVALID_PARAM');
+  });
+
+  it('validate：任务缺 taskId/clientId 或 op 非法 → INVALID_PARAM', () => {
+    expect(validate('record.batchSync', { tasks: [{ clientId: 'x', op: 'create' }] }).code).toBe('INVALID_PARAM');
+    expect(validate('record.batchSync', { tasks: [task({ op: 'explode' })] }).code).toBe('INVALID_PARAM');
+    expect(validate('record.batchSync', { tasks: [task()] })).toBeNull();
+  });
+
+  it('create ×2 + delete ×1：按序串行落库，逐条回执', async () => {
+    const { db, handlers } = makeHandler();
+    await handlers.handleUpsert(basePayload(), MP_OWNER); // abc-1 已存在
+    const res = await handlers.handleBatchSync(
+      {
+        tasks: [
+          task({ taskId: 't1', clientId: 'abc-1' }), // create 幂等命中 → duplicated 视为成功
+          task({ taskId: 't2', clientId: 'abc-2' }), // create 新记录
+          task({ taskId: 't3', clientId: 'abc-1', op: 'delete' }), // 软删 abc-1
+        ],
+      },
+      MP_OWNER
+    );
+    expect(res.ok).toBe(true);
+    const [t1, t2, t3] = res.data.results;
+    expect(t1.ok).toBe(true);
+    expect(t2.ok).toBe(true);
+    expect(t2.record.version).toBe(1);
+    expect(t3.ok).toBe(true);
+    // 落库核对：abc-2 存在且 _openid 隔离正确，abc-1 软删
+    const snap = db.inspect();
+    expect(snap.filter((r) => r._openid === MP_OWNER).length).toBe(2);
+    expect(snap.find((r) => r.clientId === 'abc-1').deleted).toBe(true);
+  });
+
+  it('batch 中 conflict：返回 ok:true + conflict + 服务端文档', async () => {
+    const { db, handlers } = makeHandler();
+    await handlers.handleUpsert(basePayload(), MP_OWNER); // v1
+    await handlers.handleUpsert(basePayload({ op: 'update', baseVersion: 1, payload: { amount: 3000 } }), MP_OWNER); // v2
+    const res = await handlers.handleBatchSync(
+      {
+        tasks: [task({ taskId: 't1', op: 'update', baseVersion: 1, payload: { amount: 9999 } })],
+      },
+      MP_OWNER
+    );
+    const t1 = res.data.results[0];
+    expect(t1.ok).toBe(true);
+    expect(t1.conflict).toBe(true);
+    expect(t1.record.amount).toBe(3000); // 服务端当前文档
+    expect(db.inspect()[0].amount).toBe(3000); // 不被覆盖
+  });
+
+  it('batch 中单条业务失败：回执 ok:false + error 码，不影响其他任务', async () => {
+    const { db, handlers } = makeHandler();
+    const res = await handlers.handleBatchSync(
+      {
+        tasks: [
+          task({ taskId: 't1', payload: { ...task().payload, amount: 1.5 } }), // 金额非法
+          task({ taskId: 't2', clientId: 'abc-ok' }),
+        ],
+      },
+      MP_OWNER
+    );
+    const [t1, t2] = res.data.results;
+    expect(t1.ok).toBe(false);
+    expect(t1.error).toBe('INVALID_PARAM');
+    expect(t2.ok).toBe(true);
+    expect(db.inspect().length).toBe(1); // 只有合法那条落库
+  });
+
+  it('_openid 隔离：batch 只作用于本人数据', async () => {
+    const { db, handlers } = makeHandler();
+    await handlers.handleUpsert(basePayload(), MP_OWNER); // abc-1 属于 MP_OWNER
+    const res = await handlers.handleBatchSync(
+      { tasks: [task({ taskId: 't1', clientId: 'abc-1', op: 'delete' })] },
+      H5_OWNER
+    );
+    expect(res.data.results[0].ok).toBe(false); // 他人数据不可删
+    expect(db.inspect()[0].deleted).toBeUndefined();
+  });
+});

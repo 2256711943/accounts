@@ -101,7 +101,7 @@ import { usePrivacyStore } from '@/stores/privacy';
 import { compressImage, DEFAULT_TARGET } from '@/services/imaging/compress';
 import { uploadRecordImage } from '@/services/imaging/upload';
 import { recognizePhoto } from '@/services/recognize/orchestrator';
-import { call } from '@/api/client';
+import { useRecordStore } from '@/stores/record';
 import { generateId } from '@/utils/id';
 import ConfirmCard from '@/components/biz/ConfirmCard.vue';
 import type { MediaPickResult } from '@/adapters/media';
@@ -110,6 +110,7 @@ import type { RecognizeCandidate } from '@/services/recognize/orchestrator';
 import type { LedgerRecord } from '@/types/model';
 
 const privacy = usePrivacyStore();
+const recordStore = useRecordStore();
 
 /** 相机授权状态：denied → Empty 降级；其余 → 取景框 + 快门 */
 const auth = ref<CameraAuthStatus>('not-determined');
@@ -174,7 +175,7 @@ async function startFlow(src: string) {
   }
 }
 
-/** 确认记账：组装 LedgerRecord → record.upsert（幂等）→ 回首页 */
+/** 确认记账：组装 LedgerRecord → store.createLocal（D10 乐观入队，离线也可记）→ 回首页 */
 async function onConfirm(payload: {
   amountFen: number;
   merchant?: string;
@@ -193,7 +194,8 @@ async function onConfirm(payload: {
           degraded: candidate.value.degraded,
         }
       : undefined;
-    const record: Partial<LedgerRecord> = {
+    const record = {
+      clientId,
       type: 'expense',
       amount: payload.amountFen,
       categoryId: payload.categoryKey,
@@ -202,13 +204,12 @@ async function onConfirm(payload: {
       source: manualMode.value ? 'manual' : 'photo',
       imageFileId: imageFileId.value ? imageFileId.value : undefined,
       recognizeMeta: meta,
-    };
-    await call('record.upsert', { clientId, op: 'create', payload: record });
+    } as LedgerRecord;
+    // 乐观写入：本地快照 + 同步队列立即上屏；在线则自动补传，离线等联网
+    recordStore.createLocal(record);
     uni.showToast({ title: '已记账', icon: 'success' });
     candidate.value = null;
     setTimeout(() => uni.reLaunch({ url: '/pages/index/index' }), 600);
-  } catch (err) {
-    uni.showToast({ title: err instanceof Error ? err.message : '保存失败，请重试', icon: 'none' });
   } finally {
     saving.value = false;
   }
