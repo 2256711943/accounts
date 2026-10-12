@@ -172,20 +172,19 @@ describe('record.remove · 软删除', () => {
     expect(list.data.list.length).toBe(0);
   });
 
-  it('删除不存在的 clientId → NOT_FOUND', async () => {
-    const { handlers } = makeHandler();
+  it('删除不存在的 clientId → 幂等成功（终态已达成，不产生脏数据）', async () => {
+    const { db, handlers } = makeHandler();
     const res = await handlers.handleRemove({ clientId: 'ghost' }, MP_OWNER);
-    expect(res.ok).toBe(false);
-    expect(res.error.code).toBe('NOT_FOUND');
+    expect(res.ok).toBe(true);
+    expect(db.inspect().length).toBe(0);
   });
 
-  it('不同 owner 不能删对方的账单', async () => {
+  it('不同 owner 的账单不受删除影响（幂等 ok，无副作用）', async () => {
     const { db, handlers } = makeHandler();
     await handlers.handleUpsert(basePayload(), MP_OWNER);
     const rm = await handlers.handleRemove({ clientId: 'abc-1' }, H5_OWNER);
-    expect(rm.ok).toBe(false);
-    expect(rm.error.code).toBe('NOT_FOUND');
-    expect(db.inspect()[0].deleted).toBeUndefined();
+    expect(rm.ok).toBe(true); // 幂等：不命中他人数据，视为删除已达成
+    expect(db.inspect()[0].deleted).toBeUndefined(); // 他人数据未被改动
   });
 });
 
@@ -338,14 +337,14 @@ describe('record.batchSync · 批量补传（D10）', () => {
     expect(db.inspect().length).toBe(1); // 只有合法那条落库
   });
 
-  it('_openid 隔离：batch 只作用于本人数据', async () => {
+  it('_openid 隔离：batch 不触碰他人数据（幂等 ok，无副作用）', async () => {
     const { db, handlers } = makeHandler();
     await handlers.handleUpsert(basePayload(), MP_OWNER); // abc-1 属于 MP_OWNER
     const res = await handlers.handleBatchSync(
       { tasks: [task({ taskId: 't1', clientId: 'abc-1', op: 'delete' })] },
       H5_OWNER
     );
-    expect(res.data.results[0].ok).toBe(false); // 他人数据不可删
-    expect(db.inspect()[0].deleted).toBeUndefined();
+    expect(res.data.results[0].ok).toBe(true); // 幂等：不命中他人数据
+    expect(db.inspect()[0].deleted).toBeUndefined(); // 他人数据未被动过
   });
 });

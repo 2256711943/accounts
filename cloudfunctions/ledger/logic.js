@@ -239,7 +239,9 @@ function createLedgerHandlers({ db, now = Date.now } = {}) {
     const coll = db.collection(COLLECTION);
     const res = await coll.where({ clientId, _openid: ownerId }).limit(1).get();
     if (res.data.length === 0) {
-      return fail(ERR.NOT_FOUND, { message: '账单不存在' });
+      // 幂等删除（D11）：目标不存在即终态已达成，返回成功。
+      // 覆盖「断网新增后删除（队列只上行 delete）」「重复同步删除」等场景，不产生脏数据。
+      return ok({ ok: true });
     }
     await coll.doc(res.data[0]._id).update({
       data: { deleted: true, updatedAt: now() },

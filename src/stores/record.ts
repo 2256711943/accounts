@@ -49,6 +49,8 @@ export const useRecordStore = defineStore('record', () => {
   const pendingCount = ref(0);
   /** 待同步的 clientId 集合（列表项「待同步」徽标用）。 */
   const pendingIds = ref<Set<string>>(new Set());
+  /** 同步失败（tries > MAX_TRIES）的 clientId 集合（列表项「同步失败·重试」用，D11）。 */
+  const failedIds = ref<Set<string>>(new Set());
 
   let unlisten: (() => void) | null = null;
 
@@ -87,6 +89,14 @@ export const useRecordStore = defineStore('record', () => {
   function refreshPending(): void {
     pendingIds.value = new Set(queue.pendingClientIds());
     pendingCount.value = pendingIds.value.size;
+    failedIds.value = new Set(queue.getAll().filter(queue.isFailed).map((t) => t.clientId));
+  }
+
+  /** 重试某条失败账单（D11）：重试计数归零后立即触发补传。 */
+  function retry(clientId: string): void {
+    if (!queue.resetTries(clientId)) return;
+    refreshPending();
+    if (online.value) void flush();
   }
 
   /** 同步当前队列；完成后用服务端回执后的快照重绘列表。 */
@@ -244,11 +254,13 @@ export const useRecordStore = defineStore('record', () => {
     online,
     pendingCount,
     pendingIds,
+    failedIds,
     fetch,
     loadMore,
     setCategory,
     init,
     flush,
+    retry,
     createLocal,
     updateLocal,
     removeLocal,

@@ -75,7 +75,13 @@
             <text class="item__sub">{{ categoryName(item.categoryId) }} · {{ timeText(item.happenedAt) }}</text>
           </view>
           <view class="item__right">
-            <text v-if="store.pendingIds.has(item.clientId)" class="item__badge">待同步</text>
+            <view
+              v-if="store.failedIds.has(item.clientId)"
+              class="item__badge item__badge--fail"
+              hover-class="item__badge--fail-hover"
+              @tap.stop="onTapRetry(item.clientId)"
+            >同步失败·重试</view>
+            <text v-else-if="store.pendingIds.has(item.clientId)" class="item__badge">待同步</text>
             <text class="item__amount">{{ (item.type === 'expense' ? '-' : '+') + fenToYuan(item.amount) }}</text>
           </view>
         </view>
@@ -233,6 +239,11 @@ onReachBottom(() => {
 function onRetry() {
   store.fetch(true);
 }
+/** D11：列表项「同步失败·重试」→ 重试计数归零并立即补传。 */
+function onTapRetry(clientId: string) {
+  store.retry(clientId);
+  uni.showToast({ title: '已重新加入同步队列', icon: 'none' });
+}
 function onLoadMore() {
   store.loadMore();
 }
@@ -254,9 +265,20 @@ function onTapProfile() {
 }
 function onTapSyncNow() {
   void store.flush().then((summary) => {
-    if (summary?.interrupted) {
+    if (!summary) return;
+    if (summary.interrupted) {
       uni.showToast({ title: '网络不可用，稍后再试', icon: 'none' });
-    } else if (summary && summary.failed > 0) {
+      return;
+    }
+    // D11 冲突提示：LWW 采纳服务端文档后告知用户（冲突详情见 ARCHITECTURE.md §4.2）
+    if (summary.conflicts > 0) {
+      uni.showToast({
+        title: `${summary.conflicts} 条已在其他设备更新，已采用最新版本`,
+        icon: 'none',
+      });
+      return;
+    }
+    if (summary.failed > 0) {
       uni.showToast({ title: `已同步 ${summary.synced} 条，${summary.failed} 条稍后重试`, icon: 'none' });
     }
   });
@@ -517,6 +539,17 @@ function onTapFab() {
   &__badge {
     font-size: $fs-tiny;
     color: $color-warning;
+
+    &--fail {
+      padding: $sp-1 $sp-2;
+      color: $color-bg-surface;
+      background-color: $color-danger;
+      border-radius: $r-full;
+    }
+
+    &--fail-hover {
+      opacity: 0.75;
+    }
   }
 
   &--expense &__amount {

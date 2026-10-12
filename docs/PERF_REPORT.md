@@ -135,3 +135,64 @@
 | `src/pages-capture/index.vue` | 拍照→压缩→上传→识别→确认→`record.upsert` 全链路接线 |
 | `src/utils/id.ts` | `generateId()`（uuid v4，幂等 clientId） |
 | 新增单测 | `rule.spec.ts`（17）、`upload.spec.ts`（7） |
+
+---
+
+# Part 3 — D11 离线同步幂等与冲突实测（亮点 H3）
+
+> **采集日期**：2026-10-12 ｜ 运行环境：H5（`localhost:5173` + browser_use 驱动 + 云函数 HTTP 网关独立核对）
+> **目标**（D11 DoD）：重复同步不产生脏数据；冲突有明确策略；断网操作恢复后同步成功率 100%、重复 0；弱网无丢数据。
+
+## 3.1 实测方法
+
+- **断网操作**：`dispatchEvent(new Event('offline'))` 切离线后，真实键入新增 4 笔；再以**数据驱动注入**组合 10 笔操作（4 create + 3 update + 3 delete），覆盖幂等 / 乐观并发 / 软删除三类上行路径。
+- **恢复同步**：`dispatchEvent(new Event('online'))` 触发 `onNetworkChange → flush()`，`record.batchSync` 一次往返批量补传。
+- **云端独立核对**：`POST /ledger/record.list`（HTTP 网关，demo 身份）读取 `ledger_records` 终态，与本地快照 / 队列逐一比对。
+
+## 3.2 同步成功率与重复率（DoD 核心指标）
+
+| 指标 | 结果 | 判定 |
+|---|---|---|
+| 断网操作上行成功率 | **100%**（10/10：create×4 + update×3 + delete×3 全部落库/生效） | ✅ |
+| 重复 clientId | **0**（`(clientId, _openid)` 幂等键下无重复文档） | ✅ |
+| 队列最终一致性 | 队列清空（`sl:sync:queue` = `[]`）、页面待同步条消失 | ✅ |
+| 控制台错误 | 无应用级 error（仅环境 warn） | ✅ |
+
+云端终态抽样（ownerId = `h5-demo-single-user`）：
+
+| clientId | 操作 | 云端实测 | 证据 |
+|---|---|---|---|
+| `99791feb…07a0` | create（断网新增） | `version=1, amount=4440, merchant=D11-new-4` | 存在且唯一 |
+| `a3ac780c…e3cf` | update（baseVersion=1） | `version=2, amount=1350`（原 1250） | 乐观并发版本递增 ✅ |
+| `74dd1428…d0d3` | update（baseVersion=1） | `version=2, amount=900`（原 800） | 版本递增 ✅ |
+| `b2a91e1e…b82b` | update（baseVersion=1） | `version=2, amount=3433`（原 3333） | 版本递增 ✅ |
+| `d11d-c1/c2/c3` | delete（软删） | 列表已过滤；重复删除幂等 ok | 终态一致 ✅ |
+
+## 3.3 实测暴露并修复的幂等缺口
+
+**问题**：`record.remove` 对「云端不存在」的 clientId 返回 `NOT_FOUND`。断网新增后立即删除（队列合并为纯 delete 上行）时，云端从无该文档 → 每轮 flush 返回 NOT_FOUND → 客户端 `bumpTries` 反复重试，最终 tries>5 被误标「同步失败」并出「重试」按钮——**删除本应是幂等终态，不应报失败**。
+
+**修复**（`cloudfunctions/ledger/logic.js`）：`handleRemove` 对未命中文档返回 `ok({ok:true})`（目标不存在即终态已达成）。`_openid` 隔离不受影响——查询条件已限定 ownerId，他人数据永不命中。云端部署后 HTTP 网关直测：删除不存在 clientId → `{ok:true}` ✅；页面触发 flush 后队列清空、待同步条消失 ✅。
+
+## 3.4 冲突策略（设计验证）
+
+- 乐观并发：update 携带 `baseVersion`，服务端 `version` 落后 → 返回 `conflict:true` + 服务端文档；客户端 LWW 采纳服务端版本，`onTapSyncNow` 汇总提示「N 条已在其他设备更新，已采用最新版本」。
+- 字段级合并：同 clientId 的 update 在队列内合并（后写覆盖），减少冲突面；delete 取代既有任务（终态）。
+- 幂等：create 命中 `(clientId, _openid)` 重复 → `duplicated:true` 视为成功，不建第二条。
+
+## 3.5 局限（诚实边界）
+
+- **弱网 3G 未直接复现**：browser_use 无网络节流能力，以「断网→恢复」二态近似模拟（D10 已覆盖断网恢复全流程）。弱网抖动下的部分失败 / 退避重试逻辑由 `computeBackoffMs` + `tries` 机制保证，真机弱网留待后续。
+- 唯一索引（数据库层兜底防重）因 CLI 对微信云开发集合不可用（RunCommands 需 MongoConnector），改为「先查后写」逻辑幂等 + 控制台手动建唯一索引指引（见 spec_finish §17 dry-run）。
+
+## 3.6 D11 变更清单
+
+| 文件 | 改动 |
+|---|---|
+| `cloudfunctions/ledger/logic.js` | `handleRemove` 幂等化：不存在文档返回 ok（终态已达成） |
+| `cloudfunctions/ledger/__tests__/ledger.spec.mjs` | 3 处断言随幂等语义更新（删除不存在 / 跨 owner / batch 隔离） |
+| `src/services/sync/queue.ts` | 新增 `resetTries(clientId)`（D11 重试按钮：清零 tries/lastError） |
+| `src/services/sync/__tests__/queue.spec.ts` | 新增 2 用例（resetTries 归零 + 不影响他条） |
+| `src/stores/record.ts` | 新增 `failedIds` / `retry(clientId)`；`refreshPending` 刷新失败集 |
+| `src/pages/index/index.vue` | 列表项「同步失败·重试」badge + 点击重试；`onTapSyncNow` 冲突/部分失败提示 |
+| 验证 | `test:ledger` 24 passed；全量 `npm test` 150 passed |

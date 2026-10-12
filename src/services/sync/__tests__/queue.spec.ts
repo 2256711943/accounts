@@ -159,4 +159,25 @@ describe('队列运维', () => {
     expect(queue.count()).toBe(0);
     expect(queue.getAll()).toEqual([]);
   });
+
+  it('resetTries：失败任务 tries 归零并清 lastError，返回 true', () => {
+    const t = queue.enqueue(makeInput());
+    for (let i = 0; i < queue.MAX_TRIES + 1; i++) queue.bumpTries(t.taskId, 'SERVER_ERROR');
+    expect(queue.isFailed(queue.getAll()[0])).toBe(true);
+    expect(queue.resetTries('abc-1')).toBe(true);
+    const reset = queue.getAll()[0];
+    expect(reset.tries).toBe(0);
+    expect(reset.lastError).toBeUndefined();
+    expect(queue.isFailed(reset)).toBe(false);
+  });
+
+  it('resetTries：无失败任务的 clientId 返回 false 且不影响他条', () => {
+    queue.enqueue(makeInput({ clientId: 'ok-1' }));
+    queue.enqueue(makeInput({ clientId: 'bad-1' }));
+    const bad = queue.getAll()[1];
+    for (let i = 0; i < queue.MAX_TRIES + 1; i++) queue.bumpTries(bad.taskId, 'SERVER_ERROR');
+    expect(queue.resetTries('ok-1')).toBe(false);
+    expect(queue.resetTries('ghost')).toBe(false);
+    expect(queue.isFailed(queue.getAll()[1])).toBe(true);
+  });
 });

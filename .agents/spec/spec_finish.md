@@ -756,3 +756,49 @@ D9 相关文件全部入库并推送 origin/main（`src/services/stats/`、`src/
 - ✅ 云端部署已完成（2026-10-11）：`tcb fn deploy ledger --force` 使 `record.batchSync` 上线（此前 H5 走逐条退化路径）；HTTP 网关直测 create×2 + delete×1 逐条 ok，list 复查软删过滤生效。
 - ✅ D10 DoD 手测已完成（H5，browser_use + `dispatchEvent(new Event('offline'/'online'))` 模拟断网/联网）：断网新增 3 笔（商户 D10-offline-1/2/3）→ UI 立即显示且标记「待同步」；恢复网络 → 5 秒内待同步条消失、3 笔保留在列表且无标记，控制台无业务报错。
 - 待办：D10 DoD 真机录屏自测（微信开发者工具真机模式，含小程序端网络切换）；D11 列表项「重试」按钮等后续。
+
+---
+
+## 17. D11 幂等与冲突（亮点 H3）—— 已交付
+
+> 2026-10-12 ｜ 目标：重复同步不产生脏数据；冲突有明确策略；失败有可恢复路径（重试按钮）。
+
+### 17.1 本轮完成清单
+
+| 项 | 结果 |
+|---|---|
+| 幂等 create | `(clientId, _openid)` 重复 create → `duplicated:true` 视为成功，不建第二条（既有） |
+| 乐观并发 | update 带 `baseVersion`，服务端 `version` 落后 → `conflict:true` + 服务端文档，客户端 LWW 采纳服务端版本 |
+| 字段级合并 | 同 clientId update 队列内合并（后写覆盖），delete 取代既有任务（终态） |
+| **幂等删除（本轮修复）** | `handleRemove` 对不存在文档由 `NOT_FOUND` 改为幂等 `ok` —— 断网新增后删除不再反复重试误报失败 |
+| 失败路径 | `tries > MAX_TRIES(5)` 标记失败 → 列表项「同步失败·重试」badge，点击 `retry(clientId)` 归零计数并立即补传 |
+| 冲突提示 | `onTapSyncNow` 汇总：冲突 → 「N 条已在其他设备更新，已采用最新版本」；部分失败 → 重试文案 |
+
+### 17.2 验证证据（DoD）
+
+- **同步成功率 100%、重复 0**：断网组合 10 笔（create×4 + update×3 + delete×3）恢复同步后，HTTP 网关独立核对 `ledger_records` 终态 —— c4 create 落库（amount=4440）、d1/d2/d3 update 生效（version 1→2，金额 1350/900/3433）、delete 幂等；无重复 clientId。
+- **队列最终一致性**：flush 后 `sl:sync:queue` = `[]`、页面待同步条消失、控制台无应用级 error（browser_use 现场复查 3 轮）。
+- **幂等删除修复复验**：`record.remove`（不存在 clientId）→ `{ok:true}`；页面触发同步后 3 条残留 delete 任务全部出队。
+- **单测**：`test:ledger` 24 passed（含 3 处随幂等语义更新的断言）；全量 `npm test` 150 passed；type-check / lint 全绿（前端 D11 改动轮）。
+- **云端部署**：`tcb fn deploy ledger --force` 成功（2026-10-12，幂等删除修复上线）。
+- 实测报告已追加至 `docs/PERF_REPORT.md` Part 3。
+
+### 17.3 唯一索引控制台 dry-run 指引（未执行，待人工确认）
+
+目标：`ledger_records` 集合上建 `(clientId, _openid)` 唯一索引，数据库层兜底防重复文档。
+
+**干跑路径（不执行任何变更）**：
+1. 打开 [腾讯云开发控制台](https://console.cloud.tencent.com/tcb) → 选中环境 `cloud1-d3gqupt5l5a75414e`。
+2. 左侧「数据库」→ 集合 `ledger_records` → 「索引管理」标签。
+3. 点击「新建索引」，配置：
+   - 字段：`clientId`（升序）+ `_openid`（升序）
+   - 选项：**唯一**（Unique）
+4. 预计影响：单索引建完即可用；唯一约束对既有重复文档建索引会失败——先执行「去重」：按 `(clientId, _openid)` 分组保留最早 `createdAt`，其余软删（`deleted:true`）或物理删除。
+5. 当前数据量极小（<20 条），无性能风险；索引不产生费用。
+
+**暂不执行的理由**：tcb CLI 的 `RunCommands` 需 MongoConnector，对微信云开发集合不可用（已实证）；当前逻辑幂等（先查后写）+ 乐观并发已满足 DoD「重复 0」。唯一索引属**锦上添花的数据库层兜底**，由人工在控制台按上述步骤执行即可。
+
+### 17.4 当前 Git 状态与待办
+
+- 本轮改动：`cloudfunctions/ledger/logic.js` + `__tests__/ledger.spec.mjs`（幂等删除）+ `src/services/sync/queue.ts` + `__tests__/queue.spec.ts`（resetTries）+ `src/stores/record.ts` + `src/pages/index/index.vue`（失败重试 UI）+ `docs/PERF_REPORT.md`（Part 3）。
+- 待办：真机弱网 3G 实测；唯一索引控制台手工执行（可选，见 §17.3）。

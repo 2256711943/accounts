@@ -160,6 +160,23 @@ export function isFailed(task: SyncTask): boolean {
   return (task.tries ?? 0) > MAX_TRIES;
 }
 
+/**
+ * 重置某账单的全部任务的重试计数（D11「重试」按钮）：
+ * 清零 tries 与 lastError，让任务重新可被 flush。返回是否有任务被重置。
+ */
+export function resetTries(clientId: string): boolean {
+  const all = readAll();
+  let changed = false;
+  for (let i = 0; i < all.length; i++) {
+    if (all[i].clientId === clientId && (all[i].tries ?? 0) > 0) {
+      all[i] = { ...all[i], tries: 0, lastError: undefined };
+      changed = true;
+    }
+  }
+  if (changed) writeAll(all);
+  return changed;
+}
+
 /** 清空队列（我的页「清空本地缓存」用）。 */
 export function clear(): void {
   try {
