@@ -89,5 +89,13 @@
 		// 无法引用 SCSS 变量或 CSS 自定义属性。改 token 时记得同步这里。
 		"navigationBarBackgroundColor": "#FAFAFC",
 		"backgroundColor": "#FAFAFC"
+	},
+	// D12 亮点 H4：分包预下载 —— 首页（应用启动页）停留时预下载"统计"普通分包，进统计页零等待。
+	// 仅提测统计分包：详情/拍照分包体量小且属低频路径，不预载以省不必要的网络与存储。
+	"preloadRule": {
+		"pages/index/index": {
+			"network": "all",
+			"packages": ["pages-stats"]
+		}
 	}
 }

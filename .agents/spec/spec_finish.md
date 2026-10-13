@@ -802,3 +802,40 @@ D9 相关文件全部入库并推送 origin/main（`src/services/stats/`、`src/
 
 - 本轮改动：`cloudfunctions/ledger/logic.js` + `__tests__/ledger.spec.mjs`（幂等删除）+ `src/services/sync/queue.ts` + `__tests__/queue.spec.ts`（resetTries）+ `src/stores/record.ts` + `src/pages/index/index.vue`（失败重试 UI）+ `docs/PERF_REPORT.md`（Part 3）。
 - 待办：真机弱网 3G 实测；唯一索引控制台手工执行（可选，见 §17.3）。
+
+---
+
+## 18. D12 分包与启动优化（亮点 H4）—— 已交付
+
+> 2026-10-13 ｜ 目标：主包瘦身 + 首屏提速，出对比数据。DoD：主包 ≤1.5MB、T1 冷启动 ≤1.2s、数据可复现。
+
+### 18.1 本轮完成清单
+
+| 项 | 结果 |
+|---|---|
+| **主包瘦身** | `packOptions.ignore` 排除 `cloudfunctions/`（33.8KB，含测试/源码）：主包 **276.4 → 242.8KB（−33.6KB / −12.2%）**，DoD ≤1.5MB ✅ |
+| preloadRule | 启动页预下载 `pages-stats` 普通分包（产物 `app.json` 已验证合成） |
+| 依赖按需核对 | 组件库确认仅用到的 `wd-*` 进包；识别重模块已在 pages-capture 分包；产物无 sourcemap |
+| 独立分包评估 | `pages-capture` 需依赖主包 SgEmpty/ConfirmCard/stores/adapters 十余处，独立分包（`independent:true`）被否决；按 DEV_PLAN 预判退回「普通分包 + 预下载」 |
+| T1 冷启动 | 属 D13 `utils/perf.ts` 埋点；本轮未实测（PERF_REPORT §4.7 诚实说明） |
+
+### 18.2 验证证据
+
+- `npm run build:mp-weixin` 多次成功；产物 `project.config.json` 含 `packOptions.ignore → cloudfunctions`、`app.json` 含 `preloadRule → pages-stats` ✅。
+- 主包体积脚本可复现：应用 ignore + 排除三个分包 root 后求和 = 242.8KB。
+- type-check / lint（eslint+stylelint）/ 全量 `npm test` 150 passed 全绿。
+- 实测报告已追加至 `docs/PERF_REPORT.md` Part 4。
+
+### 18.3 云函数最小实例数 —— 云端配置 dry-run 指引（未执行，待人工确认）
+
+H4 启动优化项「云函数最小实例数设 1」，属**云端配置变更**，按 AGENTS 红线「先出 dry-run 方案待确认，不得直接改动线上」：
+
+**干跑路径**：腾讯云开发控制台 → 云函数列表 → `ledger` → 「配置」→ 高级「实例」→ 将「最小实例数」从 0 改为 1 → 保存。收益：避免函数冷启动调度延迟（T1 抖动的主要来源之一）。
+**影响**：最小实例保活 1 个会持续占用并发额度（腾讯云函数按 GB·s 计费，常驻 1 实例会产生微量费用）；对当前低频 demo 场景提升有限，建议真机 T1 实测（D13）后再决定是否保活。
+
+**暂不执行**：当前无 T1 埋点数据佐证启动瓶颈在冷启动，提前保活属「为优化而优化」；且涉及生产计费。待 D13 埋点给出数据后按需开启。
+
+### 18.4 当前 Git 状态与待办
+
+- 本轮改动：`src/manifest.json`（packOptions.ignore）+ `src/pages.json`（preloadRule）+ `docs/PERF_REPORT.md`（Part 4）。
+- 待办：D13 接入 `utils/perf.ts` 埋点实测 T1（≤1.2s 验收）；云函数最小实例数按 dry-run 待确认执行。

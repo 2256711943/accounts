@@ -196,3 +196,58 @@
 | `src/stores/record.ts` | 新增 `failedIds` / `retry(clientId)`；`refreshPending` 刷新失败集 |
 | `src/pages/index/index.vue` | 列表项「同步失败·重试」badge + 点击重试；`onTapSyncNow` 冲突/部分失败提示 |
 | 验证 | `test:ledger` 24 passed；全量 `npm test` 150 passed |
+
+---
+
+# Part 4 — D12 分包与启动优化（亮点 H4）
+
+> **采集日期**：2026-10-13 ｜ 构建：`npm run build:mp-weixin` → `dist/build/mp-weixin`（编译器 5.24）
+> **目标**（D12 DoD）：主包体积有明确下降且 **≤1.5MB**；T1 冷启动 ≤1.2s；数据可复现。
+
+## 4.1 优化后主包体积对比
+
+| 口径 | 优化前 | 优化后 | 增量 |
+|---|---|---|---|
+| 主包（根逻辑 + 页面 + 组件 + 运行时库） | 276.4 KB | **242.8 KB** | **−33.6 KB（−12.2%）** |
+
+- **排除项**：`cloudfunctions/`（33.8KB，含 `ledger.spec.mjs` 14.4KB 等测试与源码）经 `packOptions.ignore` 出包——云函数走 `tcb fn deploy` 部署，**无需进小程序包**，瘦主包且不泄露测试/源码。
+- 分包合计：`pages-capture` 9.8KB + `pages-stats` 7.1KB + `pages-detail` 5.0KB（普通分包，不进主包体积预算）。
+- DoD：主包 **242.8KB ≤ 1.5MB** ✅。
+- **测量口径**：应用 `project.config.json → packOptions.ignore` 后的实际上传包体积（排除被标记 ignore 的目录与三个分包 root），脚本可复现：遍历 `dist/build/mp-weixin` 文件，filter 掉 `pages-*` 分包与 `cloudfunctions/` 后求和。
+
+## 4.2 分包预下载（preloadRule）
+
+- `pages.json` 增加 `preloadRule`：启动页 `pages/index/index` 停留时**预下载 `pages-stats` 普通分包**（`network: all`）。
+- 收益：进统计页零分包等待；仅对**体量中等的统计分包**预载，避免对低频路径（详情/拍照）浪费网络与存储。
+- 产物验证：`dist/build/mp-weixin/app.json` 中 `preloadRule` 已合成 ✅。
+
+## 4.3 依赖按需核对（构建产物实证）
+
+- **组件库按需**：扫描主包 `node-modules/wot-design-uni/`，仅 `wd-icon`（17.6KB wxss）、`wd-input`、`wd-button`、`wd-message-box`、`wd-toast`、`wd-loading`、`wd-transition`、`wd-popup` 等**实际用到的**组件进包，未出现整包/未用组件 ✅（easycom 机制生效）。
+- **识别重模块已在分包**：`compress` / `upload` / `recognize/orchestrator` 仅被 `pages-capture`（普通分包）静态引用，不进主包——主包 `services/` 仅 9.5KB。
+- 移除 sourcemap / 开发依赖：小程序产物未含 `.map`。
+
+## 4.4 独立分包评估（诚实结论）
+
+`pages-capture` 尝试独立分包（`independent:true`）**被否决**：
+- 微信独立分包**不能依赖主包资源**（JS/组件/template/wxss），若需独立须把 `SgEmpty`、`ConfirmCard`、`stores/*`、`adapters/*` 等十余处主包依赖迁入分包——改动半径远超收益。
+- 当前 `pages-capture` 已是普通分包 + 主包 242.8KB（安全余量大），独立分包省下的部分收益抵不过重构风险与回归成本。
+- **符合 DEV_PLAN §D12 预判**："独立分包引用主包资源编译报错 → 立即退回普通分包 + 预下载"。故落地为**普通分包 + 预下载**，保留同等启动收益。
+
+## 4.5 启动优化（首屏）
+
+- **首屏缓存直出**（D10 已就绪）：`sl:records:cache` 快照渲染首屏 → 静默拉服务端，避免启动白屏等待。
+- **TODO（云端配置，需 dry-run 方案待确认）**：云函数最小实例数设为 1，避免冷启动调度延迟。此项属云端配置改动，未执行（见 spec_finish §18 dry-run）。
+
+## 4.6 D12 变更清单
+
+| 文件 | 改动 |
+|---|---|
+| `src/manifest.json` | `mp-weixin.packOptions.ignore`：排除 `cloudfunctions/`（−33.6KB，云函数不入包） |
+| `src/pages.json` | `preloadRule`：首页预下载 `pages-stats` 分包 |
+| 验证 | `npm run build:mp-weixin` 产物 `project.config.json` packOptions + `app.json` preloadRule 均合成；type-check / lint / 全量 150 tests 全绿 |
+
+## 4.7 局限（诚实边界）
+
+- **T1 冷启动未实测**：需微信开发者工具真机/工具埋点（`utils/perf.ts` 属 D13），当前仅交付主包体积与预下载的静态化验证；T1 ≤1.2s 待 D13 埋点接入后复测。
+- 独立分包未经拆分验证（见 §4.4），主包收益来自 cloudfunctions 排除，不含分包重构。

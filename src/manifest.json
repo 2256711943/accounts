@@ -56,12 +56,21 @@
             "cloud" : true
         },
         /* 云函数根目录：相对小程序根目录解析，由 vite.config.ts 的 syncCloudFunctions 复制进产物 */
-		"cloudfunctionRoot" : "cloudfunctions/",
-		"usingComponents" : true,
-		/* D6：开启分包优化，pages-capture 按普通分包打包，后续 D12 改独立分包 */
-		"optimization" : {
-			"subPackages" : true
-		}
+			"cloudfunctionRoot" : "cloudfunctions/",
+			"usingComponents" : true,
+			/* D6：开启分包优化，pages-capture 按普通分包打包 */
+			"optimization" : {
+				"subPackages" : true
+			},
+			/* D12 亮点 H4：云函数经云端部署（`tcb fn deploy`），不进小程序包体积。
+			   packOptions.ignore 排除 dist 产物里的 cloudfunctions/（含测试文件 33.8KB），瘦主包。
+			   云函数仍会被 vite.config.ts 的 syncCloudFunctions 复制进产物，但上传时不进包。 */
+			"packOptions" : {
+				"ignore" : [ {
+					"type" : "folder",
+					"value" : "cloudfunctions"
+				} ]
+			}
 	},
     "mp-alipay" : {
         "usingComponents" : true
