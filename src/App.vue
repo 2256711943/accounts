@@ -2,6 +2,7 @@
 import { onLaunch } from '@dcloudio/uni-app';
 import { usePrivacyStore } from '@/stores/privacy';
 import { useRecordStore } from '@/stores/record';
+import { markLaunch } from '@/utils/perf';
 
 /**
  * 应用级生命周期。
@@ -10,11 +11,12 @@ import { useRecordStore } from '@/stores/record';
  * 免得开发日志混进生产包（D14 交付检查项「无 console.log 残留」）。
  */
 onLaunch(() => {
+  // D13：T1 起点（首页 onReady 时 markTiming('t1') 计算相对耗时）
+  markLaunch();
   // D6：注册《隐私保护指引》回调（H5 端为空实现，恒不弹）
   usePrivacyStore().init();
   // D10：账单缓存直出 + 网络监听（恢复网络自动补传离线队列）
   useRecordStore().init();
-  // TODO(D13): perf.mark('launch')
 });
 </script>
 

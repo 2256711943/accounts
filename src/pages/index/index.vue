@@ -53,38 +53,48 @@
       >{{ categoryName(cat) }}</view>
     </view>
 
-    <!-- 列表：分组 -->
+    <!-- 列表：分组（D13 虚拟列表化，5000 条仅渲染可视区 ±3 屏） -->
     <view v-if="!store.loading && !store.error && !isNoData" class="content" :class="{ 'content--fading': fading }">
-      <view v-for="group in groups" :key="group.label" class="group">
-        <view class="group__header">
-          <text class="group__label">{{ group.label }}</text>
-          <text class="group__count">{{ group.items.length }} 笔</text>
-        </view>
-        <view
-          v-for="item in group.items"
-          :key="item.clientId"
-          class="item"
-          :class="'item--' + item.type"
-          @tap="onTapItem(item)"
+      <view class="content__list">
+        <SgVirtualList
+          ref="vlistRef"
+          :items="flatRows"
+          :item-height="ROW_HEIGHT"
+          :scroll-top="scrollTop"
+          :row-key="rowKey"
         >
-          <view class="item__avatar" :style="{ backgroundColor: categoryColor(item.categoryId) }">
-            <text class="item__avatar-text">{{ categoryName(item.categoryId).slice(0, 1) }}</text>
-          </view>
-          <view class="item__body">
-            <text class="item__title">{{ item.merchant || categoryName(item.categoryId) }}</text>
-            <text class="item__sub">{{ categoryName(item.categoryId) }} · {{ timeText(item.happenedAt) }}</text>
-          </view>
-          <view class="item__right">
+          <template #row="{ item }">
+            <view v-if="item.kind === 'header'" class="group__header" :style="{ height: ROW_HEIGHT + 'px' }">
+              <text class="group__label">{{ item.label }}</text>
+              <text class="group__count">{{ item.count }} 笔</text>
+            </view>
             <view
-              v-if="store.failedIds.has(item.clientId)"
-              class="item__badge item__badge--fail"
-              hover-class="item__badge--fail-hover"
-              @tap.stop="onTapRetry(item.clientId)"
-            >同步失败·重试</view>
-            <text v-else-if="store.pendingIds.has(item.clientId)" class="item__badge">待同步</text>
-            <text class="item__amount">{{ (item.type === 'expense' ? '-' : '+') + fenToYuan(item.amount) }}</text>
-          </view>
-        </view>
+              v-else
+              :key="item.item.clientId"
+              class="item"
+              :class="'item--' + item.item.type"
+              @tap="onTapItem(item.item)"
+            >
+              <view class="item__avatar" :style="{ backgroundColor: categoryColor(item.item.categoryId) }">
+                <text class="item__avatar-text">{{ categoryName(item.item.categoryId).slice(0, 1) }}</text>
+              </view>
+              <view class="item__body">
+                <text class="item__title">{{ item.item.merchant || categoryName(item.item.categoryId) }}</text>
+                <text class="item__sub">{{ categoryName(item.item.categoryId) }} · {{ timeText(item.item.happenedAt) }}</text>
+              </view>
+              <view class="item__right">
+                <view
+                  v-if="store.failedIds.has(item.item.clientId)"
+                  class="item__badge item__badge--fail"
+                  hover-class="item__badge--fail-hover"
+                  @tap.stop="onTapRetry(item.item.clientId)"
+                >同步失败·重试</view>
+                <text v-else-if="store.pendingIds.has(item.item.clientId)" class="item__badge">待同步</text>
+                <text class="item__amount">{{ (item.item.type === 'expense' ? '-' : '+') + fenToYuan(item.item.amount) }}</text>
+              </view>
+            </view>
+          </template>
+        </SgVirtualList>
       </view>
 
       <view class="footer">
@@ -130,13 +140,41 @@
  * 见 docs/DEV_PLAN.md D5「明确不做」。分类源固定少数内置项（无历史数据时也能出胶囊）。
  */
 import { computed, ref } from 'vue';
-import { onLoad, onPullDownRefresh, onReachBottom } from '@dcloudio/uni-app';
+import { onLoad, onPageScroll, onPullDownRefresh, onReady, onReachBottom } from '@dcloudio/uni-app';
 import { useRecordStore } from '@/stores/record';
 import { fenToYuan, groupByDay } from '@/utils/format';
 import { prefersReducedMotion, vibrateShort } from '@/adapters/system';
+import { markTiming, measureApi } from '@/utils/perf';
 import type { LedgerRecord } from '@/types/model';
 
 const store = useRecordStore();
+
+/** D13 虚拟列表行高（px）：分组头与账单行统一固定高度（item 56px + 行距 8px），保证区间计算一致。 */
+const ROW_HEIGHT = 64;
+/** 滚动位置（px，onPageScroll 节流 16ms 后写入，驱动虚拟区间重算）。 */
+const scrollTop = ref(0);
+let lastScrollAt = 0;
+let t1Marked = false;
+const vlistRef = ref<{ visibleCount: number } | null>(null);
+
+/** 虚拟列表行：分组头 或 账单。 */
+interface FlatRow {
+  kind: 'header' | 'item';
+  key: string;
+  label?: string;
+  count?: number;
+  item?: LedgerRecord;
+}
+const rowKey = (_item: unknown, index: number) => String(index);
+/** 把按天分组扁平化为定高行序列（header 行 + 账单行），供虚拟列表渲染。 */
+const flatRows = computed<FlatRow[]>(() => {
+  const rows: FlatRow[] = [];
+  for (const g of groups.value) {
+    rows.push({ kind: 'header', key: `h-${g.label}`, label: g.label, count: g.items.length });
+    for (const it of g.items) rows.push({ kind: 'item', key: `i-${it.clientId}`, item: it });
+  }
+  return rows;
+});
 
 /* ── 分类内置项（无后端分类表，先固定少数；名/色仅供首屏展示） ── */
 interface BuiltinCat {
@@ -225,7 +263,23 @@ async function onToggleCategory(id: string | null) {
 /* ── 生命周期 ── */
 onLoad(() => {
   prefersReduced.value = prefersReducedMotion();
-  store.fetch(true);
+  const stop = measureApi('record.list');
+  void store.fetch(true).finally(stop);
+});
+onReady(() => {
+  // D13 T1：launch → 首页首屏 onReady（只标记一次）
+  if (!t1Marked) {
+    t1Marked = true;
+    markTiming('t1');
+    markTiming('pageReady');
+  }
+});
+onPageScroll((e) => {
+  // 16ms 节流：高频滚动只驱动虚拟区间重算，不直接 setData
+  const now = Date.now();
+  if (now - lastScrollAt < 16) return;
+  lastScrollAt = now;
+  scrollTop.value = e.scrollTop;
 });
 onPullDownRefresh(async () => {
   await store.fetch(true);
@@ -462,16 +516,15 @@ function onTapFab() {
   }
 }
 
-/* 日期分组 */
+/* 日期分组（D13 虚拟列表行：header 行高由内联 ROW_HEIGHT 控制） */
 .group {
-  margin-top: $sp-5;
-
   &__header {
     display: flex;
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
-    padding: 0 $sp-1 $sp-2;
+    box-sizing: border-box;
+    padding: 0 $sp-1;
   }
 
   &__label {

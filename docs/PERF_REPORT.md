@@ -251,3 +251,64 @@
 
 - **T1 冷启动未实测**：需微信开发者工具真机/工具埋点（`utils/perf.ts` 属 D13），当前仅交付主包体积与预下载的静态化验证；T1 ≤1.2s 待 D13 埋点接入后复测。
 - 独立分包未经拆分验证（见 §4.4），主包收益来自 cloudfunctions 排除，不含分包重构。
+
+---
+
+# Part 5 — D13 虚拟列表 + setData 治理 + 性能埋点（亮点 H4）
+
+> **采集日期**：2026-10-13 ｜ 运行环境：H5（`localhost:5174` + browser_use 驱动，`pages/dev/perf` 压测沙箱）+ `npm run build:mp-weixin` 产物验证
+> **目标**（D13 DoD）：5000 条数据仅渲染可视区 ±2 屏；滚动单次 setData ≤8KB；埋点攒批落盘可复现。
+
+## 5.1 虚拟列表压测（H5，5000 条内存合成数据）
+
+| 指标 | 实测值 | 判定 |
+|---|---|---|
+| 数据量 | 5000 条合成账单（`SgVirtualList`，行高 64px） | — |
+| 容器总高 | **320000px**（64px × 5000） | — |
+| 实际渲染可视节点 | **21–28 个**（可视区 ±2 屏缓冲） | ✅ 仅渲染约 0.5% 节点 |
+| 单次 setData 最大 | **6.5KB**（overscan=2） | ✅ **≤8KB DoD** |
+| 单次 setData 平均 | 6.5KB | ✅ |
+| overscan=3 对照 | 单次 setData max **9.1KB** | ❌ 超 DoD → 定稿 overscan=2 |
+
+> 定稿参数：`overscan` 默认 **2**（压测实测 3 时 9.1KB 超限，2 时 6.5KB 达标）；`threshold` 默认 **200**（低于 200 条虚拟化关闭、区间退化为全量，防小列表抖动）。
+
+**简历一句话**：「自研虚拟列表（页面滚动模式 + 绝对定位画布 + overscan 缓冲）：5000 条账单仅渲染可视区 21–28 个节点，滚动单次 setData ≤6.5KB；≤200 条自动退化为全量渲染。」
+
+## 5.2 setData 治理与埋点落盘
+
+- **setData 治理**：`VirtualList` 在可视区间变化时序列化区间数据统计字节数 → `perf.recordSetdata`（纯计算，不额外触发真实 setData）。
+- **埋点批量落盘**：`utils/perf` 本地聚合 T1 / setData / 接口耗时 / 错误 / 压缩；攒批 **10 条或 10s** 自动落盘 `sl:perf`，H5 实测落盘成功 ✅。
+- **T1 埋点**：`App.vue onLaunch` 打 `markLaunch()` 起点，首页 `onReady` 打 `pageReady` 终点，面板可观测 T1 值。
+
+## 5.3 首页接入与退化行为
+
+- 首页 `flatRows` 走 `SgVirtualList`（页面滚动模式：父页 `onPageScroll` 16ms 节流传 `scrollTop`，下拉刷新 / 触底加载原样保留）。
+- 首页真实数据量小（当前 4 条）→ 低于 `threshold` 虚拟化不激活，退化为全量渲染，属预期行为。
+
+## 5.4 H5 滚动失效根因与沙箱方案取舍（踩坑记录）
+
+**问题**：早期「灌 5000 条 seed 再回首页压测」在 H5 端失效——`onSeed()` 只写快照 `sl:records:cache` 未入同步队列，而 `store.rebuildList` 只补「pending 队列中的快照记录」；首页 fetch 成功后以服务端为准重建，5000 条 seed 全被丢弃，`flatRows` 仅 6 行、页面不可滚动。
+
+**取舍**：若改为入队，则 `init()` 自动 flush 会把 5000 条真实上传云端、污染数据流——否决。
+
+**最终方案**：开发面板内嵌**虚拟列表压测沙箱**（5000 条内存合成数据，不写快照、不入队列、不碰云端），与首页共用同一 `SgVirtualList` 组件，滚动本页即压测，数据完全可复现、无污染。
+
+## 5.5 局限（诚实边界）
+
+- **H5 压测**（浏览器窗口 375px 级视口）；小程序端可视节点数 / setData 行为需微信开发者工具或真机复核。
+- **T1 ≤1.2s 冷启动 DoD 判定**：埋点已就绪、H5 面板可观测，但正式判定仍需微信开发者工具 / 真机冷启动复测（Part 4.7 的「待 D13 埋点」TODO 已由本轮解除，复测仍待真机）。
+
+## 5.6 D13 变更清单
+
+| 文件 | 改动 |
+|---|---|
+| `src/utils/perf.ts` | 埋点核心：`markLaunch/markTiming/recordSetdata/recordApi/recordError/recordCompress` + 攒批落盘 `sl:perf`（10 条 / 10s） |
+| `src/utils/__tests__/perf.spec.ts` | 埋点聚合 / 攒批落盘单测 |
+| `src/components/VirtualList/index.vue` + `virtual.ts` | 自研虚拟列表（亮点 H4）：页面滚动模式 + 绝对定位画布 + `computeRange` 纯函数 + overscan 缓冲 + threshold 退化 |
+| `src/components/VirtualList/__tests__/virtual.spec.ts` | `computeRange` 边界 / 全量退化单测 |
+| `src/pages/index/index.vue` | 首页接入虚拟列表 + `t1/pageReady/api` 埋点 |
+| `src/pages/dev/perf.vue` | 性能开发面板：T1 / setData 数据量 / 接口 TOP5 / 错误 / 压缩 + 虚拟列表压测沙箱 |
+| `src/pages.json` | 注册 `pages/dev/perf` |
+| `src/pages/profile/index.vue` | 版本号连点 5 次 → 进入性能面板 |
+| `src/App.vue` | `onLaunch` 埋点 `markLaunch()`（T1 起点） |
+| 验证 | type-check / lint / 全量 `npm test` 170 passed（较 D12 的 150 新增 20）；`build:mp-weixin` 产物生成成功 |

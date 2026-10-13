@@ -36,6 +36,12 @@
 				"navigationBarTitleText": "压缩采集"
 			}
 		},
+		{
+			"path": "pages/dev/perf",
+			"style": {
+				"navigationBarTitleText": "性能面板"
+			}
+		},
 
 		{
 			"path": "pages/profile/index",

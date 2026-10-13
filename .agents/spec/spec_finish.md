@@ -839,3 +839,44 @@ H4 启动优化项「云函数最小实例数设 1」，属**云端配置变更*
 
 - 本轮改动：`src/manifest.json`（packOptions.ignore）+ `src/pages.json`（preloadRule）+ `docs/PERF_REPORT.md`（Part 4）。
 - 待办：D13 接入 `utils/perf.ts` 埋点实测 T1（≤1.2s 验收）；云函数最小实例数按 dry-run 待确认执行。
+
+### 18.5 收尾补记（注释清理 + 推送）
+
+- 按用户要求剥离 `src/pages.json` / `src/manifest.json` 全部 `//` 与 `/* */` 注释，恢复为标准合法 JSON（`JSON.parse` 校验 + `build:mp-weixin` 复验通过）。
+- Git 提交：`eef6882`（D12 分包与启动优化）+ `8706796`（注释清理）。
+- **已推送**：`060e707..8706796 → origin/main`（D11 `060e707` 之后的全部改动已同步远程）。
+- 当前工作区仅剩 `.claude/`、`.trae/` 工具目录未跟踪，无待提交业务改动。
+
+---
+
+## 19. D13 — 虚拟列表 + setData 治理 + 性能埋点 + 开发面板 + 压测（2026-10-13）
+
+> 目标：自研虚拟列表（亮点 H4 补强）+ 性能埋点 + setData 治理 + 开发面板压测。DoD：5000 条仅渲染可视区 ±2 屏；滚动单次 setData ≤8KB；埋点攒批落盘。
+
+### 19.1 本轮完成清单
+
+| 项 | 结果 |
+|---|---|
+| **虚拟列表** | `src/components/VirtualList/`（index.vue + virtual.ts + 单测）：页面滚动模式（父页 `onPageScroll` 16ms 节流传 `scrollTop`）+ 绝对定位画布 + `computeRange` 纯函数；`overscan` 默认 **2**（压测实测 3 时 setData 9.1KB 超 DoD，2 时 6.5KB 达标）；`threshold` 默认 200，低于 200 条退化为全量渲染防抖动 |
+| **性能埋点** | `src/utils/perf.ts`：`markLaunch`（App.vue onLaunch，T1 起点）/ `pageReady` / `recordSetdata` / `recordApi` / `recordError` / `recordCompress`；攒批 **10 条或 10s** 落盘 `sl:perf` |
+| **首页接入** | `src/pages/index/index.vue` flatRows 走 SgVirtualList + t1/pageReady/api 埋点 |
+| **开发面板** | `src/pages/dev/perf.vue`（pages.json 注册；我的页版本号连点 5 次进入）：T1 / setData 数据量 / 接口 TOP5 / 错误 / 压缩 + **虚拟列表压测沙箱**（5000 条内存合成数据，滚动本页即压测，不写快照、不入队列、不碰云端） |
+| **setData 治理** | VirtualList 可视区间变化即序列化统计字节 → `perf.recordSetdata`（纯计算，不额外触发真实 setData） |
+
+### 19.2 压测验证证据（H5，browser_use 驱动）
+
+- **5000 条合成账单**：容器总高 320000px；实际渲染可视节点 **21–28 个**（约 0.5%）；滚动单次 setData **max 6.5KB**（平均 6.5KB）→ **DoD ≤8KB ✅**；overscan=3 对照 9.1KB 超标。
+- 埋点攒批 **10 条自动落盘 `sl:perf` ✅**（H5 实测）。
+- type-check / lint（eslint+stylelint）/ 全量 `npm test` **170 passed**（较 D12 的 150 新增 20：perf.spec + virtual.spec）全绿。
+- `npm run build:mp-weixin` 成功（exit 0，产物 2026-10-13 21:30 生成）。
+- 实测报告已追加至 `docs/PERF_REPORT.md` Part 5。
+
+### 19.3 踩坑记录（H5 滚动失效根因与方案取舍）
+
+- 「灌 5000 条 seed 回首页压测」H5 失效：`onSeed()` 只写快照未入同步队列，`store.rebuildList` 只补 pending 队列；首页 fetch 成功后以服务端为准重建 → seed 全被丢弃，页面仅 6 行不可滚动。
+- 若改为入队则 `init()` flush 会把 5000 条真实上传污染云端——否决。最终：面板内嵌**内存合成沙箱**，与首页共用同一 `SgVirtualList`，零数据流污染、可复现。
+
+### 19.4 当前 Git 状态与待办
+
+- 本轮改动文件：`src/utils/perf.ts`（新增）、`src/utils/__tests__/perf.spec.ts`（新增）、`src/components/VirtualList/`（新增 3 文件）、`src/pages/dev/perf.vue`（新增）、`src/pages/index/index.vue`、`src/pages/profile/index.vue`、`src/pages.json`、`src/App.vue`、`docs/PERF_REPORT.md`（Part 5）、本文件（§19）。
+- 待办：T1 ≤1.2s 冷启动 DoD 判定需微信开发者工具 / 真机复测；云函数最小实例数按 §18.3 dry-run 待确认。

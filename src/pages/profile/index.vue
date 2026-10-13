@@ -98,7 +98,8 @@ function onVersionTap(): void {
   versionTaps.value += 1;
   if (versionTaps.value >= 5) {
     versionTaps.value = 0;
-    uni.navigateTo({ url: '/pages/dev/components' });
+    // D13：版本隐藏入口 → 性能开发面板（T1 / setData / 接口 TOP5）
+    uni.navigateTo({ url: '/pages/dev/perf' });
   }
 }
 
