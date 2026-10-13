@@ -1,9 +1,9 @@
 {
-	// easycom：wot-design-uni 的唯一引入方式（AGENTS.md 组件引入红线）。
-	// 只有模板里真实出现过的 wd-* 才会进包，这是主包体积预算的前提。
-	// Sg 系列为自研原子组件：`<SgButton>` → `src/components/Button/index.vue`。
-	// 业务组件（biz/Feedback.vue 等）一律手动 import 引用，不进 easycom。
-	// ⚠️ 改这里不会触发重编译，改完要顺手改动一个页面文件。
+
+
+
+
+
 	"easycom": {
 		"autoscan": true,
 		"custom": {
@@ -12,7 +12,7 @@
 		}
 	},
 	"pages": [
-		// pages 数组中第一项表示应用启动页
+
 		{
 			"path": "pages/index/index",
 			"style": {
@@ -22,21 +22,21 @@
 				"backgroundTextStyle": "dark"
 			}
 		},
-		// 开发验收页：7 个自研原子组件 + Feedback 宿主的双端截图用（D3 交付物）
+
 		{
 			"path": "pages/dev/components",
 			"style": {
 				"navigationBarTitleText": "组件验收"
 			}
 		},
-		// 开发采集页：图片压缩管线样张采集（D7 亮点 H2，仅 H5 执行）
+
 		{
 			"path": "pages/dev/compress",
 			"style": {
 				"navigationBarTitleText": "压缩采集"
 			}
 		},
-		// 我的页：登录态 / 提醒 / 清缓存 / 版本隐藏入口（D9）
+
 		{
 			"path": "pages/profile/index",
 			"style": {
@@ -44,7 +44,7 @@
 			}
 		}
 	],
-	// 普通分包（D12 起独立分包）：拍照页、统计页、详情页打包进分包，避免撑大主包体积预算。
+
 	"subPackages": [
 		{
 			"root": "pages-capture",
@@ -84,14 +84,14 @@
 	"globalStyle": {
 		"navigationBarTextStyle": "black",
 		"navigationBarTitleText": "一拍记",
-		// 下面两个色值必须与 design/tokens/tokens.json 的 color.bg.base (#FAFAFC) 保持一致。
-		// 这是全工程**唯一**允许出现字面色值的地方：导航栏底色由平台读取，只接受字面量，
-		// 无法引用 SCSS 变量或 CSS 自定义属性。改 token 时记得同步这里。
+
+
+
 		"navigationBarBackgroundColor": "#FAFAFC",
 		"backgroundColor": "#FAFAFC"
 	},
-	// D12 亮点 H4：分包预下载 —— 首页（应用启动页）停留时预下载"统计"普通分包，进统计页零等待。
-	// 仅提测统计分包：详情/拍照分包体量小且属低频路径，不预载以省不必要的网络与存储。
+
+
 	"preloadRule": {
 		"pages/index/index": {
 			"network": "all",

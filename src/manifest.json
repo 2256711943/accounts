@@ -5,7 +5,7 @@
     "versionName" : "1.0.0",
     "versionCode" : "100",
     "transformPx" : false,
-    /* 5+App特有相关 */
+
     "app-plus" : {
         "usingComponents" : true,
         "nvueStyleCompiler" : "uni-app",
@@ -16,11 +16,11 @@
             "autoclose" : true,
             "delay" : 0
         },
-        /* 模块配置 */
+
         "modules" : {},
-        /* 应用发布信息 */
+
         "distribute" : {
-            /* android打包配置 */
+
             "android" : {
                 "permissions" : [
                     "<uses-permission android:name=\"android.permission.CHANGE_NETWORK_STATE\"/>",
@@ -40,31 +40,29 @@
                     "<uses-permission android:name=\"android.permission.WRITE_SETTINGS\"/>"
                 ]
             },
-            /* ios打包配置 */
+
             "ios" : {},
-            /* SDK配置 */
+
             "sdkConfigs" : {}
         }
     },
-    /* 快应用特有相关 */
+
     "quickapp" : {},
-    /* 小程序特有相关 */
+
     "mp-weixin" : {
         "appid" : "wx5a295e93d120a7ee",
         "setting" : {
             "urlCheck" : false,
             "cloud" : true
         },
-        /* 云函数根目录：相对小程序根目录解析，由 vite.config.ts 的 syncCloudFunctions 复制进产物 */
+
 			"cloudfunctionRoot" : "cloudfunctions/",
 			"usingComponents" : true,
-			/* D6：开启分包优化，pages-capture 按普通分包打包 */
+
 			"optimization" : {
 				"subPackages" : true
 			},
-			/* D12 亮点 H4：云函数经云端部署（`tcb fn deploy`），不进小程序包体积。
-			   packOptions.ignore 排除 dist 产物里的 cloudfunctions/（含测试文件 33.8KB），瘦主包。
-			   云函数仍会被 vite.config.ts 的 syncCloudFunctions 复制进产物，但上传时不进包。 */
+
 			"packOptions" : {
 				"ignore" : [ {
 					"type" : "folder",
