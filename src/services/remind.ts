@@ -4,9 +4,8 @@
  * 职责：记账成功后申请一次性订阅额度 → 云端 `subscribe.register` 累加额度，
  * 供 `remind` 云函数定时下发「24h 未记账提醒」使用。
  *
- * 模板 ID：需在小程序后台「订阅消息」申请「记账提醒」模板后替换本文件与
- * `cloudfunctions/remind/logic.js` 中的占位值（dry-run 指引见 spec_finish §20）。
- * 占位状态下 `registerRemindQuota` 直接跳过，**不弹授权框、不请求云端** —— 部署安全。
+ * 模板 ID：`REMIND_TEMPLATE_ID`（已在小程序后台申请「记账提醒」一次性订阅模板）。
+ * 该常量同时用于云端 `cloudfunctions/remind/logic.js` 的 `TEMPLATE_ID`。
  *
  * 分层（AGENTS 红线）：本文件不出现 `#ifdef`，平台差异收敛在 `adapters/subscribe.ts`。
  */
@@ -15,10 +14,9 @@ import { call } from '@/api/client';
 import { requestSubscribe } from '@/adapters/subscribe';
 
 /**
- * 记账提醒订阅模板 ID。
- * ⚠️ 占位值：申请后台模板后替换。保持占位时服务整体「跳过申请」，真机安全。
+ * 记账提醒订阅模板 ID（后台已申请的一次性订阅模板）。
  */
-export const REMIND_TEMPLATE_ID = 'YOUR_TEMPLATE_ID';
+export const REMIND_TEMPLATE_ID = 'IutL3tfh4xZuWPWzpBm6ZEwppu_PQvAORFVMv2xMWWE';
 
 export interface RegisterRemindQuotaResult {
   ok: boolean;
@@ -36,9 +34,6 @@ export interface RegisterRemindQuotaResult {
 export async function registerRemindQuota(
   templateId: string = REMIND_TEMPLATE_ID
 ): Promise<RegisterRemindQuotaResult> {
-  if (templateId === 'YOUR_TEMPLATE_ID') {
-    return { ok: false, skipped: true };
-  }
   try {
     const sub = await requestSubscribe(templateId);
     if (sub.status !== 'accept') {

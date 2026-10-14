@@ -1,14 +1,13 @@
 // remind 客户端服务单测（D14 F7）：订阅授权申请 + 云端额度累加编排
 //
-// mock '@/adapters/subscribe' 与 '@/api/client'，覆盖四类路径：
-//   1. 模板占位 → 跳过，不调 adapter
-//   2. 用户允许（accept）→ 调云端 subscribe.register
-//   3. 非 accept（拒绝/不支持）→ 跳过，不调云端
-//   4. 通道失败 → 静默降级，不抛异常（红线 6 / 不阻塞记账）
+// mock '@/adapters/subscribe' 与 '@/api/client'，覆盖三类路径：
+//   1. 用户允许（accept）→ 调云端 subscribe.register
+//   2. 非 accept（拒绝/不支持）→ 跳过，不调云端
+//   3. 通道失败 → 静默降级，不抛异常（红线 6 / 不阻塞记账）
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-// 先 mock 依赖，再动态导入被测模块（保持模板占位常量可测）
+// 先 mock 依赖，再动态导入被测模块
 const requestSubscribe = vi.fn();
 vi.mock('@/adapters/subscribe', () => ({
   requestSubscribe: (...args: unknown[]) => requestSubscribe(...args),
@@ -30,13 +29,6 @@ describe('registerRemindQuota（D14 F7）', () => {
 
   afterEach(() => {
     vi.resetModules();
-  });
-
-  it('模板占位（默认参数）：直接跳过，不调 adapter 不调云端', async () => {
-    const res = await remind.registerRemindQuota();
-    expect(res.skipped).toBe(true);
-    expect(requestSubscribe).not.toHaveBeenCalled();
-    expect(call).not.toHaveBeenCalled();
   });
 
   it('用户允许（accept）：调云端 subscribe.register，返回 ok', async () => {

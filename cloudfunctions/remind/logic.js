@@ -33,19 +33,18 @@ const REMIND_WINDOW_MS = 24 * 60 * 60 * 1000;
 const MAX_SCAN_USERS = 100;
 
 /**
- * 订阅模板 ID。
- * ⚠️ 需在小程序后台「订阅消息」申请「记账提醒」模板后替换（dry-run 指引见 spec_finish §20）。
- * 保持占位（非合法模板 ID）时，handleTimerRun 一律跳过发送，仅扫描统计 —— 部署安全。
+ * 订阅模板 ID（微信后台已申请的一次性订阅模板）。
  */
-const TEMPLATE_ID = 'YOUR_TEMPLATE_ID';
+const TEMPLATE_ID = 'IutL3tfh4xZuWPWzpBm6ZEwppu_PQvAORFVMv2xMWWE';
 
 /**
  * 订阅消息 data 字段（形如 `字段名: { value }`）。
- * ⚠️ 字段名必须与后台申请的模板字段一致；申请模板时建议选择：
- *    thing1（24h 未记账文案）/ time1（最近记账时间）
+ * ⚠️ 字段名必须与后台申请的模板字段一致。已申请模板字段：
+ *    thing3  提醒内容（本例承载「24h 未记账」催记账文案；20 字内）
+ *    time1  时间 / amount6 昨日支出 / amount10 昨日收入 —— 仅模板可见，本例不填（不展示）
  */
 const TEMPLATE_FIELDS = {
-  thing1: '您已有 24 小时未记账，快回来记一笔吧',
+  thing3: '您已有 24 小时未记账，快回来记一笔吧',
 };
 
 /** 微信侧「用户已拒绝/未订阅」错误码：本地额度视为失效，应扣减避免反复打空 */
@@ -54,12 +53,12 @@ const ERR_USER_REFUSED = 43101;
 /**
  * 单次运行的返回（供入口/测试断言）：
  *   { ok, scanned, sent, skipped, refused }
- *   scanned 扫描的额度用户数；sent 成功下发数；skipped 无额度/未到窗口跳过数；
- *   refused 用户已拒绝被扣额度数；templateMissing 模板未配置跳过数。
+ *   scanned 扫描的额度用户数；sent 成功下发数；skipped 未到窗口跳过数；
+ *   refused 用户已拒绝被扣额度数。
  */
 function createRemindHandlers({ db, send, now = Date.now, templateId } = {}) {
   const _ = db.command;
-  // 模板 ID 可注入（单测覆盖发送路径）；默认取模块常量（占位时安全跳过）
+  // 模板 ID 可注入（单测覆盖发送路径）；默认取模块常量 TEMPLATE_ID
   const TEMPLATE = templateId || TEMPLATE_ID;
 
   /**
@@ -93,14 +92,10 @@ function createRemindHandlers({ db, send, now = Date.now, templateId } = {}) {
   async function handleTimerRun() {
     const quotaRes = await db.collection(SUBSCRIBE_QUOTA_COLLECTION).limit(MAX_SCAN_USERS).get();
     const quotas = (quotaRes.data || []).filter((q) => (q.count || 0) > 0 && typeof q._openid === 'string');
-    const stat = { scanned: 0, sent: 0, skipped: 0, refused: 0, templateMissing: 0 };
+    const stat = { scanned: 0, sent: 0, skipped: 0, refused: 0 };
 
     for (const quota of quotas) {
       stat.scanned += 1;
-      if (TEMPLATE === 'YOUR_TEMPLATE_ID') {
-        stat.templateMissing += 1;
-        continue;
-      }
       const last = await latestRecord(quota._openid);
       const idle = now() - (last ? last.happenedAt : 0);
       if (last && idle <= REMIND_WINDOW_MS) {

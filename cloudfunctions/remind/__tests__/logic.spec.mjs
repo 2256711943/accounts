@@ -4,11 +4,10 @@
 // 运行：npm run test:remind（package.json）或 npm test
 //
 // 覆盖语义：
-//   1. 模板未配置（占位）→ 安全跳过，不误发
-//   2. 24h 内记过账 → 不发（skipped）
-//   3. 超过 24h / 无记录 → 下发，成功后扣额度
-//   4. 用户已拒绝（43101）→ 额度失效扣减，避免反复打空
-//   5. _openid 隔离：只处理有额度用户
+//   1. 24h 内记过账 → 不发（skipped）
+//   2. 超过 24h / 无记录 → 下发，成功后扣额度
+//   3. 用户已拒绝（43101）→ 额度失效扣减，避免反复打空
+//   4. _openid 隔离：只处理有额度用户
 
 import { describe, expect, it } from 'vitest';
 import logic from '../logic.js';
@@ -38,18 +37,6 @@ function makeHandler(db, sendMock, opts = {}) {
 }
 
 describe('remind.handleTimerRun（D14 F7）', () => {
-  it('模板未配置（占位）：扫描但不发送，模板缺失计数', async () => {
-    const db = makeDb({ quota: { _openid: OWNER, templateId: TPL, count: 2 } });
-    const send = async () => {
-      throw new Error('不应被调用');
-    };
-    const { handleTimerRun } = makeHandler(db, send); // 不注入 templateId → 占位
-    const stat = (await handleTimerRun()).data;
-    expect(stat.scanned).toBe(1);
-    expect(stat.templateMissing).toBe(1);
-    expect(stat.sent).toBe(0);
-  });
-
   it('24h 内记过账：不发（skipped），额度保留', async () => {
     const db = makeDb({
       quota: { _openid: OWNER, templateId: TPL, count: 2 },
@@ -81,7 +68,7 @@ describe('remind.handleTimerRun（D14 F7）', () => {
     expect(calls[0].touser).toBe(OWNER);
     expect(calls[0].templateId).toBe(TPL);
     expect(calls[0].page).toBe('pages/index/index');
-    expect(calls[0].data.thing1.value).toContain('24 小时');
+    expect(calls[0].data.thing3.value).toContain('24 小时');
     expect(db.inspect().find((d) => d._id === 'q1').count).toBe(1); // 2 → 1
   });
 
