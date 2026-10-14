@@ -880,3 +880,62 @@ H4 启动优化项「云函数最小实例数设 1」，属**云端配置变更*
 
 - 本轮改动文件：`src/utils/perf.ts`（新增）、`src/utils/__tests__/perf.spec.ts`（新增）、`src/components/VirtualList/`（新增 3 文件）、`src/pages/dev/perf.vue`（新增）、`src/pages/index/index.vue`、`src/pages/profile/index.vue`、`src/pages.json`、`src/App.vue`、`docs/PERF_REPORT.md`（Part 5）、本文件（§19）。
 - 待办：T1 ≤1.2s 冷启动 DoD 判定需微信开发者工具 / 真机复测；云函数最小实例数按 §18.3 dry-run 待确认。
+
+---
+
+## 20. D14 — F7 订阅消息提醒 + 双端打磨（2026-10-14）
+
+> 目标：加分项 F7 订阅消息提醒（云函数定时触发 + 记账后申请一次性订阅额度 + 24h 未记账提醒）择一做完；双端体验拉齐（H5 桌面壳 / reduced-motion / MP 滚动穿透 / hover-class / 动效只动 transform+opacity / 隐私合规复查）。DoD：定时触发器能真实发出订阅消息（真机收到）；H5 桌面浏览器打开不是拉满全屏。
+
+### 20.1 本轮完成清单
+
+**F7 订阅消息链路（客户端已通，云端待上线）**
+
+| 层 | 文件 | 内容 |
+|---|---|---|
+| 客户端申请 | `src/services/remind.ts` | `REMIND_TEMPLATE_ID`（占位 `'YOUR_TEMPLATE_ID'`）+ `registerRemindQuota()`：MP `uni.requestSubscribeMessage` accept 后调 `subscribe.register` 累加额度；H5/模板未配置/异常全部静默降级，**绝不阻塞记账** |
+| 客户端接入 | `src/pages-capture/index.vue` | `onConfirm` 记账成功后 `void registerRemindQuota()`（best-effort 挂起） |
+| 适配层 | `src/adapters/subscribe.ts` | 跨端封装订阅申请 → `{ status: 'accept'\|'other'\|'unsupported' }`，永不抛异常 |
+| 云端累加 | `cloudfunctions/ledger/logic.js` + `index.js` | 新增 action `subscribe.register`：`subscribe_quota` 集合按 `(templateId, _openid)` 幂等 upsert，存在 `count+1` / 不存在建 `count:1`；`validate` 增加模板 ID 校验 |
+| 定时发送 | `cloudfunctions/remind/`（新建） | `index.js`（入口胶水 + 注入 `cloud.openapi.subscribeMessage.send`）+ `logic.js`（扫 `count>0` 限量 100 用户，查 `ledger_records` 无记录或 idle>24h → 发订阅；成功 / `43101` 扣额，其他错误保留额度）+ 单测 |
+| 类型 | `src/types/api.ts` | `SubscribeRegisterPayload/Data`（既有，无需改） |
+
+**双端打磨**
+
+| 项 | 结果 |
+|---|---|
+| H5 桌面壳 | `src/App.vue` `@media (width >= 481px)` 把 `uni-app/uni-page` 收敛为 480px 居中 + 阴影（`.stylelintrc` 补 `uni-app`/`uni-page` ignoreTypes）；`src/manifest.json` 开 `h5.router.mode = 'hash'` |
+| reduced-motion | App.vue 全局兜底（时长压 0.01ms，非 none，保留状态复位）；页面级 `.content`/`.legend__bar` 已处理 |
+| 动效（只动 transform/opacity） | 首页 `.content` 入场 200ms；`.fab` 按下 `scale(0.9)` 弹簧回弹；ConfirmCard 抽屉入场 320ms `@keyframes sg-card-in` |
+| MP 滚动穿透 | `src/pages-capture/index.vue` 确认卡遮罩与隐私弹窗加 `@touchmove.stop.prevent` |
+| hover-class 全局补全 | 首页（top-nav link / pending-bar / chip / item / empty/error btn）、捕获页（privacy-link）、detail（type__item / danger）、profile（row / version）、stats（head / error__btn）、ConfirmCard（card__cat）、dev/perf（row）、dev/compress（无可点元素）全部补全 + `--hover` 样式 |
+| 自定义导航滚动淡入 | 首页顶栏 `top-nav`：`onPageScroll` 超 120px 淡入（只动 opacity），含统计/我的入口 |
+| 隐私合规复查 | `src` 与 `cloudfunctions` **无 `console.*` 残留**（仅 App.vue 注释提及 + compress.vue 提示文案）；权限被拒链路 `getCameraAuthStatus`/`pickImageMp`/`openSetting` 均结构化返回不抛异常，捕获页 `hasDenied → Empty + 去开启 + 保留相册/手输`，被拒不卡死 |
+
+### 20.2 验证证据（2026-10-14 本地）
+
+- type-check / lint（eslint + stylelint）/ 全量 `npm test` **185 passed**（较 D13 的 170 新增 15：`remind.spec.ts` 5 + `cloudfunctions/remind/logic.spec.mjs` 6 + ledger 订阅 4 增量）。`test:remind` 新增 script。
+- `npm run build:mp-weixin` 与 `npm run build:h5` 均成功（exit 0）。
+- F7 三块单测：ledger `subscribe.register` 4 用例（validate/首次建档/幂等累加/_openid 隔离）、remind 定时 6 用例、客户端 `registerRemindQuota` 5 用例全部通过。
+
+### 20.3 F7 dry-run 上线方案（待确认，未执行任何云端操作）
+
+涉及生产配置变更（云函数环境变量、定时触发器、订阅模板），**先输出方案待确认**：
+
+1. **微信订阅消息模板申请**：小程序后台「功能 → 订阅消息 → 选用模板」申请带 `thing1` 字段的「记账提醒」一次性模板，拿到模板 ID 替换两处占位 `'YOUR_TEMPLATE_ID'`：
+   - `cloudfunctions/remind/logic.js` 的 `TEMPLATE_ID`
+   - `src/services/remind.ts` 的 `REMIND_TEMPLATE_ID`
+2. **部署 `remind` 云函数**（含 `config.json` 配置 `cloud.openapi` 权限）：
+   - `tcb fn deploy remind`（或微信开发者工具右键上传）
+   - 需在云函数配置中声明 `openapi: ['subscribeMessage.send']` 权限
+3. **创建定时触发器**（云函数配置 → 触发器）：`cron` 表达式如 `0 0 9 * * * *`（每天 9 点），并把运行环境变量（若按天触发）交由 `handleTimerRun` 内部扫 `subscribe_quota` 判定 24h 未记账。
+4. **确认 `subscribe_quota` / `ledger_records` 集合存在**：`subscribe_quota` 由 `ledger` 云函数 `subscribe.register` 自动 upsert（会计入 `_openid` 隔离），无需预建索引（逻辑幂等已满足，见 project_memory 经验）。
+5. `manifest.json` 的 `envId` 属生产配置，本组不改；`mp-weixin` 开启 `cloud: true` 已具备。
+
+> ⚠️ 项目红线：模板 ID 真实值、定时触发频率、云函数部署均属生产配置变更，须经确认后执行。
+
+### 20.4 当前 Git 状态与待办
+
+- 本轮改动文件：`cloudfunctions/remind/`（新建 4 文件）、`cloudfunctions/ledger/{logic,index}.js`、`ledger/__tests__/{ledger.spec.mjs,memory-db.js}`、`src/services/remind.ts`（新增 + 单测）、`src/adapters/subscribe.ts`（新增）、`src/pages-capture/index.vue`、`src/pages/index/index.vue`、`src/pages-detail/index.vue`、`src/pages/profile/index.vue`、`src/pages-stats/index.vue`、`src/components/biz/ConfirmCard.vue`、`src/pages/dev/perf.vue`、`src/App.vue`、`src/manifest.json`、`.stylelintrc.json`、`package.json`、本文件（§20）。
+- 待办：F7 云端上线（§20.3 dry-run 待确认）；DoD「真机收到订阅消息」需真机复测。
+- 简历产出：「云函数定时触发器 + 订阅消息打通记账提醒（含一次性订阅额度管理）」。

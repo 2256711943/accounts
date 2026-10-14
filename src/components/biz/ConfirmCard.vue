@@ -35,6 +35,7 @@
           :key="c.key"
           class="card__cat"
           :class="{ 'card__cat--on': c.key === categoryKey }"
+          hover-class="card__cat--hover"
           @click="categoryKey = c.key"
         >
           <text>{{ c.icon }}</text>
@@ -128,6 +129,21 @@ function onConfirm(): void {
   background: $color-bg-surface;
   border-radius: $r-lg;
 
+  /* D14 动效：确认卡以「抽屉式」入场（320ms，只动 transform/opacity） */
+  animation: sg-card-in $dur-slow $ease-std;
+
+  @keyframes sg-card-in {
+    from {
+      opacity: 0;
+      transform: translateY(24rpx);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
   &__amber {
     padding: $sp-3 $sp-3;
     margin-bottom: $sp-3;
@@ -208,6 +224,10 @@ function onConfirm(): void {
     &--on {
       border-color: $color-accent;
       background: rgb(47 128 237 / 8%);
+    }
+
+    &--hover {
+      opacity: 0.8;
     }
 
     &-name {

@@ -1,7 +1,7 @@
 <template>
   <view class="page">
     <!-- 顶部：本月 + 环比 -->
-    <view class="head" @tap="onTapHead">
+    <view class="head" hover-class="head--hover" @tap="onTapHead">
       <text class="head__month">{{ monthLabel(thisMonthKey) }}</text>
       <text class="head__mom" v-if="mo2NBadge">{{ mo2NBadge }}</text>
     </view>
@@ -60,7 +60,7 @@
     <view v-if="error && !loading" class="error">
       <text class="error__title">统计加载失败</text>
       <text class="error__desc">{{ error }}</text>
-      <view class="error__btn" @tap="load">重试</view>
+      <view class="error__btn" hover-class="error__btn--hover" @tap="load">重试</view>
     </view>
 
     <!-- 加载态 -->
@@ -212,6 +212,10 @@ onLoad(() => {
   flex-direction: row;
   align-items: center;
   gap: $sp-3;
+
+  &--hover {
+    opacity: 0.7;
+  }
 
   &__month {
     font-size: $fs-h1;
@@ -372,6 +376,10 @@ onLoad(() => {
     color: $color-bg-surface;
     background-color: $color-accent;
     border-radius: $r-full;
+
+    &--hover {
+      opacity: 0.85;
+    }
   }
 }
 

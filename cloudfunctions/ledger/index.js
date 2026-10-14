@@ -80,6 +80,8 @@ exports.main = async (event) => {
         return await handlers.handleRemove(req.payload, ownerId);
       case 'record.batchSync':
         return await handlers.handleBatchSync(req.payload, ownerId);
+      case 'subscribe.register':
+        return await handlers.handleSubscribeRegister(req.payload, ownerId);
       default:
         return fail(ERR.UNKNOWN_ACTION, { action: req.action });
     }

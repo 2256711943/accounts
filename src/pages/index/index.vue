@@ -1,12 +1,21 @@
 <template>
   <view class="page">
+    <!-- 自定义导航（D14 打磨：滚动超阈值淡入，只动 opacity） -->
+    <view class="top-nav" :class="{ 'top-nav--visible': navVisible }">
+      <text class="top-nav__title">一拍记</text>
+      <view class="top-nav__links">
+        <text class="top-nav__link" hover-class="top-nav__link--hover" @tap="onTapStats">统计</text>
+        <text class="top-nav__link" hover-class="top-nav__link--hover" @tap="onTapProfile">我的</text>
+      </view>
+    </view>
+
     <!-- 离线顶条 -->
     <view v-if="store.offline" class="offline-bar">
       <text class="offline-bar__text">当前无网络，记账会先存在本地</text>
     </view>
 
     <!-- 待同步条（D10 离线队列）：有待同步账单时展示，点击手动触发补传 -->
-    <view v-if="store.pendingCount > 0" class="pending-bar" @tap="onTapSyncNow">
+    <view v-if="store.pendingCount > 0" class="pending-bar" hover-class="pending-bar--hover" @tap="onTapSyncNow">
       <text class="pending-bar__text">{{ store.pendingCount }} 条账单待同步</text>
       <text class="pending-bar__action">{{ store.online ? '立即同步 ›' : '联网后自动同步' }}</text>
     </view>
@@ -16,8 +25,8 @@
       <view class="hero__top">
         <text class="hero__month">{{ monthLabel }}</text>
         <view class="hero__links">
-          <text class="hero__link" @tap="onTapStats">统计</text>
-          <text class="hero__link" @tap="onTapProfile">我的</text>
+          <text class="hero__link" hover-class="hero__link--hover" @tap="onTapStats">统计</text>
+          <text class="hero__link" hover-class="hero__link--hover" @tap="onTapProfile">我的</text>
         </view>
       </view>
       <text class="hero__label">本月支出（元）</text>
@@ -42,6 +51,7 @@
       <view
         class="chip"
         :class="{ 'chip--active': store.categoryId === null }"
+        hover-class="chip--hover"
         @tap="onToggleCategory(null)"
       >全部</view>
       <view
@@ -49,6 +59,7 @@
         :key="cat"
         class="chip"
         :class="{ 'chip--active': store.categoryId === cat }"
+        hover-class="chip--hover"
         @tap="onToggleCategory(cat)"
       >{{ categoryName(cat) }}</view>
     </view>
@@ -73,6 +84,7 @@
               :key="item.item.clientId"
               class="item"
               :class="'item--' + item.item.type"
+              hover-class="item--hover"
               @tap="onTapItem(item.item)"
             >
               <view class="item__avatar" :style="{ backgroundColor: categoryColor(item.item.categoryId) }">
@@ -107,13 +119,13 @@
       <text class="empty__emoji">🧾</text>
       <text class="empty__title">本月还没有账单</text>
       <text class="empty__desc">拍一张小票，开始记账吧</text>
-      <view class="empty__btn" @tap="onTapFab">拍一张开始记账</view>
+      <view class="empty__btn" hover-class="empty__btn--hover" @tap="onTapFab">拍一张开始记账</view>
     </view>
 
     <view v-if="store.error && !store.loading" class="error">
       <text class="error__title">加载失败</text>
       <text class="error__desc">{{ store.error?.message }}</text>
-      <view class="error__btn" @tap="onRetry">重试</view>
+      <view class="error__btn" hover-class="error__btn--hover" @tap="onRetry">重试</view>
     </view>
 
     <!-- 加载态 -->
@@ -126,7 +138,7 @@
     </view>
 
     <!-- 悬浮按钮 -->
-    <view class="fab" @tap="onTapFab">
+    <view class="fab" hover-class="fab--hover" @tap="onTapFab">
       <text class="fab__icon">＋</text>
     </view>
   </view>
@@ -244,6 +256,8 @@ const loadmoreStatus = computed(() => {
 
 /* ── 淡入淡出切换（只动 opacity，尊重 prefers-reduced-motion） ── */
 const fading = ref(false);
+/** D14 打磨：自定义导航滚动淡入——滚动超阈值时展示（只动 opacity）。 */
+const navVisible = ref(false);
 const prefersReduced = ref(false);
 
 async function onToggleCategory(id: string | null) {
@@ -275,11 +289,12 @@ onReady(() => {
   }
 });
 onPageScroll((e) => {
-  // 16ms 节流：高频滚动只驱动虚拟区间重算，不直接 setData
+  // 16ms 节流：高频滚动只驱动虚拟区间重算与导航淡入，不直接 setData
   const now = Date.now();
   if (now - lastScrollAt < 16) return;
   lastScrollAt = now;
   scrollTop.value = e.scrollTop;
+  navVisible.value = e.scrollTop > 120;
 });
 onPullDownRefresh(async () => {
   await store.fetch(true);
@@ -355,6 +370,52 @@ function onTapFab() {
   background-color: $color-bg-base;
 }
 
+/* 自定义导航（D14 打磨：滚动超阈值淡入，只动 opacity；reduced-motion 由 App.vue 全局兜底） */
+.top-nav {
+  position: fixed;
+  top: calc(var(--status-bar-height, 0px) + #{$sp-2});
+  left: 0;
+  right: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  box-sizing: border-box;
+  height: 88rpx;
+  padding: 0 $sp-5;
+  opacity: 0;
+  pointer-events: none;
+  background-color: $color-bg-base;
+  transition: opacity $dur-base $ease-std;
+
+  &--visible {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  &__title {
+    font-size: $fs-body;
+    font-weight: $font-weight-medium;
+    color: $color-text-primary;
+  }
+
+  &__links {
+    display: flex;
+    flex-direction: row;
+    gap: $sp-3;
+  }
+
+  &__link {
+    font-size: $fs-caption;
+    color: $color-accent;
+
+    &--hover {
+      opacity: 0.7;
+    }
+  }
+}
+
 /* 离线顶条 */
 .offline-bar {
   display: flex;
@@ -392,6 +453,10 @@ function onTapFab() {
     font-size: $fs-caption;
     color: $color-accent;
   }
+
+  &--hover {
+    opacity: 0.85;
+  }
 }
 
 /* Hero */
@@ -420,6 +485,10 @@ function onTapFab() {
   &__link {
     font-size: $fs-caption;
     color: $color-accent;
+
+    &--hover {
+      opacity: 0.7;
+    }
   }
 
   &__month {
@@ -504,15 +573,20 @@ function onTapFab() {
     background-color: $color-accent-soft;
     border-color: transparent;
   }
+
+  &--hover {
+    opacity: 0.8;
+  }
 }
 
-/* 内容淡入淡出 */
+/* 内容淡入淡出（D14：入场只动 transform/opacity，200ms $ease-std） */
 .content {
   margin-top: $sp-5;
-  transition: opacity 200ms $ease-std;
+  transition: transform $dur-base $ease-std, opacity $dur-base $ease-std;
 
   &--fading {
     opacity: 0;
+    transform: translateY(8rpx);
   }
 }
 
@@ -549,6 +623,10 @@ function onTapFab() {
   background-color: $color-bg-surface;
   border-radius: $r-md;
   box-shadow: $sh-1;
+
+  &--hover {
+    opacity: 0.85;
+  }
 
   &__avatar {
     display: flex;
@@ -656,6 +734,10 @@ function onTapFab() {
     color: $color-bg-surface;
     background-color: $color-accent;
     border-radius: $r-full;
+
+    &--hover {
+      opacity: 0.85;
+    }
   }
 }
 
@@ -698,7 +780,7 @@ function onTapFab() {
   }
 }
 
-/* 悬浮按钮 */
+/* 悬浮按钮（D14：点按弹簧，按下 120ms 缩放、松开 $ease-spring 回弹；只动 transform） */
 .fab {
   position: fixed;
   right: $sp-6;
@@ -711,6 +793,12 @@ function onTapFab() {
   background-color: $color-accent;
   border-radius: $r-full;
   box-shadow: $sh-2;
+  transition: transform $dur-fast $ease-spring;
+
+  &--hover,
+  &:active {
+    transform: scale(0.9);
+  }
 
   &__icon {
     font-size: 56rpx;

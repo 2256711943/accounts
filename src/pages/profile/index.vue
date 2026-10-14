@@ -6,7 +6,7 @@
         <text class="row__label">账号</text>
         <text class="row__value">{{ uidLabel }}</text>
       </view>
-      <view class="row" @tap="onSyncNow">
+      <view class="row" hover-class="row--hover" @tap="onSyncNow">
         <text class="row__label">立即同步</text>
         <text class="row__arrow">›</text>
       </view>
@@ -25,14 +25,14 @@
 
     <!-- 清缓存 -->
     <view class="card">
-      <view class="row" @tap="onClearCache">
+      <view class="row" hover-class="row--hover" @tap="onClearCache">
         <text class="row__label">清空本地缓存</text>
         <text class="row__value">{{ cacheSize }}</text>
       </view>
     </view>
 
     <!-- 版本号隐藏入口 → 开发面板占位（连点 5 次） -->
-    <view class="version" @tap="onVersionTap">
+    <view class="version" hover-class="version--hover" @tap="onVersionTap">
       <text class="version__text">一拍记 v{{ VERSION }}</text>
     </view>
   </view>
@@ -157,11 +157,19 @@ refreshCache();
     font-size: $fs-h2;
     color: $color-text-tertiary;
   }
+
+  &--hover {
+    opacity: 0.85;
+  }
 }
 
 .version {
   margin-top: $sp-8;
   text-align: center;
+
+  &--hover {
+    opacity: 0.7;
+  }
 
   &__text {
     font-size: $fs-caption;

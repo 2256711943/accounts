@@ -94,15 +94,15 @@
     <!-- 压测工具（灌快照 / 清空 / 刷新） -->
     <view class="card">
       <view class="card__title">压测工具</view>
-      <view class="row" @tap="onSeed">
+      <view class="row" hover-class="row--hover" @tap="onSeed">
         <text class="row__label">灌 5000 条本地快照</text>
         <text class="row__arrow">›</text>
       </view>
-      <view class="row" @tap="onClearSeed">
+      <view class="row" hover-class="row--hover" @tap="onClearSeed">
         <text class="row__label">清空压测数据</text>
         <text class="row__arrow">›</text>
       </view>
-      <view class="row" @tap="onRefresh">
+      <view class="row" hover-class="row--hover" @tap="onRefresh">
         <text class="row__label">刷新面板</text>
         <text class="row__arrow">›</text>
       </view>
@@ -283,6 +283,10 @@ function onRefresh(): void {
   align-items: center;
   justify-content: space-between;
   min-height: 88rpx;
+
+  &--hover {
+    opacity: 0.85;
+  }
 
   &__label {
     font-size: $fs-caption;

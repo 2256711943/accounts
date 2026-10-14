@@ -21,6 +21,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ledger": "vitest run cloudfunctions/ledger/__tests__",
+    "test:remind": "vitest run cloudfunctions/remind/__tests__",
     "gen:scss": "node scripts/gen-scss.mjs",
     "gen:figma": "node scripts/gen-figma-tokens.mjs",
     "gen:tokens": "npm run gen:scss && npm run gen:figma",

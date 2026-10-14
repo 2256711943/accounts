@@ -5,11 +5,13 @@
       <view
         class="type__item"
         :class="{ 'type__item--active': type === 'expense' }"
+        hover-class="type__item--hover"
         @tap="onType('expense')"
       >支出</view>
       <view
         class="type__item"
         :class="{ 'type__item--active': type === 'income' }"
+        hover-class="type__item--hover"
         @tap="onType('income')"
       >收入</view>
     </view>
@@ -69,7 +71,7 @@
     </view>
 
     <!-- 删除（二次确认走 Feedback 的 wd-message-box） -->
-    <view class="danger" @tap="onDelete">
+    <view class="danger" hover-class="danger--hover" @tap="onDelete">
       <text class="danger__text">删除这笔账</text>
     </view>
 
@@ -228,6 +230,10 @@ onLoad(() => {
       color: $color-accent;
       background-color: $color-accent-soft;
     }
+
+    &--hover {
+      opacity: 0.85;
+    }
   }
 }
 
@@ -288,6 +294,10 @@ onLoad(() => {
   text-align: center;
   background-color: $color-bg-surface;
   border-radius: $r-md;
+
+  &--hover {
+    opacity: 0.85;
+  }
 
   &__text {
     font-size: $fs-body;

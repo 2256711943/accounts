@@ -51,7 +51,7 @@
     </view>
 
     <!-- 识别确认卡（D8）：识别完成弹出，确认后记账入库 -->
-    <view v-if="candidate" class="cap__sheet-mask">
+    <view v-if="candidate" class="cap__sheet-mask" @touchmove.stop.prevent>
       <view class="cap__sheet">
         <ConfirmCard :result="candidate" @confirm="onConfirm" @cancel="onCancelConfirm" />
       </view>
@@ -61,13 +61,13 @@
     <canvas id="cap-canvas" type="2d" class="cap__canvas" />
 
     <!-- 隐私指引弹窗 -->
-    <view v-if="privacy.shown" class="cap__mask">
+    <view v-if="privacy.shown" class="cap__mask" @touchmove.stop.prevent>
       <view class="cap__privacy">
         <text class="cap__privacy-title">隐私保护指引</text>
         <text class="cap__privacy-desc">
           使用相机、相册前，请你仔细阅读并同意《用户隐私保护指引》。我们仅在为你记账时使用图片。
         </text>
-        <view class="cap__privacy-link" @tap="onOpenPrivacyContract">查看《用户隐私保护指引》</view>
+        <view class="cap__privacy-link" hover-class="cap__privacy-link--hover" @tap="onOpenPrivacyContract">查看《用户隐私保护指引》</view>
         <view class="cap__privacy-btns">
           <view
             class="cap__privacy-btn cap__privacy-btn--ghost"
@@ -101,6 +101,7 @@ import { usePrivacyStore } from '@/stores/privacy';
 import { compressImage, DEFAULT_TARGET } from '@/services/imaging/compress';
 import { uploadRecordImage } from '@/services/imaging/upload';
 import { recognizePhoto } from '@/services/recognize/orchestrator';
+import { registerRemindQuota } from '@/services/remind';
 import { useRecordStore } from '@/stores/record';
 import { generateId } from '@/utils/id';
 import ConfirmCard from '@/components/biz/ConfirmCard.vue';
@@ -209,6 +210,8 @@ async function onConfirm(payload: {
     recordStore.createLocal(record);
     uni.showToast({ title: '已记账', icon: 'success' });
     candidate.value = null;
+    // D14 F7：记账成功 → 申请订阅额度（模板未配置/端能力缺失时内部跳过，绝不阻塞记账）
+    void registerRemindQuota();
     setTimeout(() => uni.reLaunch({ url: '/pages/index/index' }), 600);
   } finally {
     saving.value = false;
@@ -503,6 +506,10 @@ onUnload(() => {
     margin-top: $sp-3;
     font-size: $fs-caption;
     color: $color-accent;
+
+    &--hover {
+      opacity: 0.7;
+    }
   }
 
   &__privacy-btns {

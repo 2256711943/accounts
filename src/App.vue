@@ -40,4 +40,34 @@ page {
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
 }
+
+/* D14 打磨：H5 桌面浏览器把页面收敛为 480px「手机壳」居中，避免拉满全屏（DoD）。
+   MP 端无视口媒体查询语义，此块不产生任何影响；仅动背景/布局，不触发动效。 */
+@media (width >= 481px) {
+  body {
+    background-color: $color-bg-subtle;
+  }
+
+  uni-app,
+  uni-page {
+    max-width: 480px;
+    margin: 0 auto;
+    min-height: 100vh;
+    background-color: $color-bg-base;
+    box-shadow: $sh-2;
+  }
+}
+
+/* D14 动效治理：H5 端 prefers-reduced-motion 全局兜底（页面级已逐处处理，这里做最后一层保险）。
+   时长压到近 0 而非置 none，避免破坏组件内「必须完成」的状态复位。
+   MP 端无此媒体查询语义，整块被忽略。 */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
 </style>

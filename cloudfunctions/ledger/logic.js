@@ -30,6 +30,9 @@ const H5_DEMO_OWNER_ID = 'h5-demo-single-user';
 // 账单单据集合名（SPEC.md §5.1）。
 const COLLECTION = 'ledger_records';
 
+// 订阅消息额度集合（D14 F7）：每用户每模板累计的一次性订阅次数。
+const SUBSCRIBE_QUOTA_COLLECTION = 'subscribe_quota';
+
 const ok = (data) => ({ ok: true, data });
 const fail = (code, extra) => ({ ok: false, error: { code, ...extra } });
 
@@ -107,6 +110,13 @@ function validate(action, payload) {
         ) {
           return { code: ERR.INVALID_PARAM, message: '任务缺少 taskId/clientId 或 op 非法' };
         }
+      }
+      return null;
+    }
+    case 'subscribe.register': {
+      // D14 F7：客户端每次获得一次性订阅授权后 +1 额度。templateId 是后台申请的唯一标识。
+      if (typeof payload.templateId !== 'string' || payload.templateId.length === 0) {
+        return { code: ERR.INVALID_PARAM, message: 'templateId 必填' };
       }
       return null;
     }
@@ -278,15 +288,44 @@ function createLedgerHandlers({ db, now = Date.now } = {}) {
     return ok({ results });
   }
 
+  /**
+   * 登记一次订阅授权（D14 F7 额度管理，ARCHITECTURE.md §6 `subscribe.register`）。
+   *
+   * 微信「一次性订阅消息」每次用户主动授权（requestSubscribeMessage 返回 accept）
+   * 仅产生一次下发额度。这里以 `(templateId, _openid)` 为幂等复合键**累加**额度：
+   * 首次建档 count=1，后续每次授权 count+1 —— 客户端每次授权后调用，天然幂等
+   * （重复调用只是把额度加回去，不会产生脏数据；额度消耗在 remind 云函数侧扣减）。
+   *
+   * 归属隔离（红线 5）：写显式落 `_openid: ownerId`，读强制过滤 `_openid`。
+   */
+  async function handleSubscribeRegister({ templateId }, ownerId) {
+    const coll = db.collection(SUBSCRIBE_QUOTA_COLLECTION);
+    const where = { templateId, _openid: ownerId };
+    const existing = await coll.where(where).limit(1).get();
+    if (existing.data.length > 0) {
+      const doc = existing.data[0];
+      await coll.doc(doc._id).update({
+        data: { count: (doc.count || 0) + 1, updatedAt: now() },
+      });
+      return ok({ ok: true });
+    }
+    await coll.add({
+      data: { templateId, _openid: ownerId, count: 1, createdAt: now(), updatedAt: now() },
+    });
+    return ok({ ok: true });
+  }
+
   return {
     ERR,
     COLLECTION,
+    SUBSCRIBE_QUOTA_COLLECTION,
     H5_DEMO_OWNER_ID,
     validate,
     handleUpsert,
     handleList,
     handleRemove,
     handleBatchSync,
+    handleSubscribeRegister,
   };
 }
 

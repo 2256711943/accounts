@@ -348,3 +348,41 @@ describe('record.batchSync · 批量补传（D10）', () => {
     expect(db.inspect()[0].deleted).toBeUndefined(); // 他人数据未被动过
   });
 });
+
+describe('subscribe.register（D14 F7 订阅额度）', () => {
+  const TEMPLATE = 'tmpl-remind-001';
+
+  it('validate: templateId 必填且非空', () => {
+    expect(validate('subscribe.register', {}).code).toBe('INVALID_PARAM');
+    expect(validate('subscribe.register', { templateId: '' }).code).toBe('INVALID_PARAM');
+    expect(validate('subscribe.register', { templateId: TEMPLATE })).toBeNull();
+  });
+
+  it('首次授权建档 count=1', async () => {
+    const { db, handlers } = makeHandler();
+    const res = await handlers.handleSubscribeRegister({ templateId: TEMPLATE }, MP_OWNER);
+    expect(res.ok).toBe(true);
+    expect(res.data.ok).toBe(true);
+    const doc = db.inspect().find((d) => d._openid === MP_OWNER && d.templateId === TEMPLATE);
+    expect(doc.count).toBe(1);
+  });
+
+  it('重复授权幂等累加：count 递增，不产生第二份', async () => {
+    const { db, handlers } = makeHandler();
+    await handlers.handleSubscribeRegister({ templateId: TEMPLATE }, MP_OWNER);
+    await handlers.handleSubscribeRegister({ templateId: TEMPLATE }, MP_OWNER);
+    const docs = db.inspect().filter((d) => d.templateId === TEMPLATE && d._openid === MP_OWNER);
+    expect(docs).toHaveLength(1);
+    expect(docs[0].count).toBe(2);
+  });
+
+  it('_openid 隔离：不同用户额度各自独立', async () => {
+    const { db, handlers } = makeHandler();
+    await handlers.handleSubscribeRegister({ templateId: TEMPLATE }, MP_OWNER);
+    await handlers.handleSubscribeRegister({ templateId: TEMPLATE }, H5_OWNER);
+    const mp = db.inspect().find((d) => d._openid === MP_OWNER && d.templateId === TEMPLATE);
+    const h5 = db.inspect().find((d) => d._openid === H5_OWNER && d.templateId === TEMPLATE);
+    expect(mp.count).toBe(1);
+    expect(h5.count).toBe(1);
+  });
+});

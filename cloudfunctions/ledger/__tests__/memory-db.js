@@ -108,7 +108,8 @@ function createMemoryDb(seed = []) {
   return {
     command: OP,
     collection(name) {
-      if (name !== 'ledger_records') throw new Error(`未预期集合：${name}`);
+      // D14 F7 起同时承载 subscribe_quota（订阅额度）；白名单放行
+      if (!['ledger_records', 'subscribe_quota'].includes(name)) throw new Error(`未预期集合：${name}`);
       return {
         where: (cond) => makeQuery(cond),
         add: async ({ data }) => {
