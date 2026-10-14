@@ -10,6 +10,15 @@
       "memorySize": 256,
       "installDependency": true,
       "ignore": ["__tests__/**", "*.spec.mjs", "node_modules/**"]
+    },
+    {
+      "name": "remind",
+      "handler": "index.main",
+      "runtime": "Nodejs16.13",
+      "timeout": 20,
+      "memorySize": 256,
+      "installDependency": true,
+      "ignore": ["__tests__/**", "*.spec.mjs", "node_modules/**"]
     }
   ]
 }

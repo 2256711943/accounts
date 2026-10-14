@@ -918,11 +918,11 @@ H4 启动优化项「云函数最小实例数设 1」，属**云端配置变更*
 - `npm run build:mp-weixin` 与 `npm run build:h5` 均成功（exit 0）。
 - F7 三块单测：ledger `subscribe.register` 4 用例（validate/首次建档/幂等累加/_openid 隔离）、remind 定时 6 用例、客户端 `registerRemindQuota` 5 用例全部通过。
 
-### 20.3 F7 dry-run 上线方案（待确认，未执行任何云端操作）
+### 20.3 F7 dry-run 上线方案（已确认并执行，见 §20.5）
 
 涉及生产配置变更（云函数环境变量、定时触发器、订阅模板），**先输出方案待确认**：
 
-1. **微信订阅消息模板申请**：小程序后台「功能 → 订阅消息 → 选用模板」申请带 `thing1` 字段的「记账提醒」一次性模板，拿到模板 ID 替换两处占位 `'YOUR_TEMPLATE_ID'`：
+1. **微信订阅消息模板申请**：小程序后台「功能 → 订阅消息 → 选用模板」申请带 `thing3` 字段的「每日记账提醒」一次性模板（实际模板另含 `time1`/`amount6`/`amount10`，本例仅填 `thing3`、其余不展示），拿到模板 ID 替换两处占位 `'YOUR_TEMPLATE_ID'`：
    - `cloudfunctions/remind/logic.js` 的 `TEMPLATE_ID`
    - `src/services/remind.ts` 的 `REMIND_TEMPLATE_ID`
 2. **部署 `remind` 云函数**（含 `config.json` 配置 `cloud.openapi` 权限）：
@@ -937,5 +937,25 @@ H4 启动优化项「云函数最小实例数设 1」，属**云端配置变更*
 ### 20.4 当前 Git 状态与待办
 
 - 本轮改动文件：`cloudfunctions/remind/`（新建 4 文件）、`cloudfunctions/ledger/{logic,index}.js`、`ledger/__tests__/{ledger.spec.mjs,memory-db.js}`、`src/services/remind.ts`（新增 + 单测）、`src/adapters/subscribe.ts`（新增）、`src/pages-capture/index.vue`、`src/pages/index/index.vue`、`src/pages-detail/index.vue`、`src/pages/profile/index.vue`、`src/pages-stats/index.vue`、`src/components/biz/ConfirmCard.vue`、`src/pages/dev/perf.vue`、`src/App.vue`、`src/manifest.json`、`.stylelintrc.json`、`package.json`、本文件（§20）。
-- 待办：F7 云端上线（§20.3 dry-run 待确认）；DoD「真机收到订阅消息」需真机复测。
+- 待办：**F7 云端已上线（§20.5）**；DoD「真机收到订阅消息」需真机复测（体验版授权订阅 → 次日 11 点前不记账 → 确认收到）。
 - 简历产出：「云函数定时触发器 + 订阅消息打通记账提醒（含一次性订阅额度管理）」。
+
+### 20.5 D14 后置：F7 云端部署执行结果（2026-10-14）
+
+> 用户已确认执行（模板 ID 已真实申请、触发时间定每天 11 点、部署走 CLI），下列为**实际执行**产出，非 dry-run。
+
+1. **模板占位符替换**：`'YOUR_TEMPLATE_ID'` → 真实模板 ID `IutL3tfh4xZuWPWzpBm6ZEwppu_PQvAORFVMv2xMWWE`（一次性订阅，字段 `thing3`），两端 `logic.js`/`remind.ts` 同步替换；发送字段从 `thing1` 改为 `thing3`，`TEMPLATE_FIELDS.thing3 = '您已有 24 小时未记账，快回来记一笔吧'`（17 字 < 20 字限制）。
+2. **占位守卫清理**：移除两端「模板未配置则跳过」死分支（`=== 'YOUR_TEMPLATE_ID'`）及 `templateMissing` 统计、对应单测用例；remind 单测 6→5、客户端 5→4，全量 `npm test` 185→183 通过。提交 `432a6f5`。
+3. **新增部署文件**：`cloudfunctions/remind/package.json`（`wx-server-sdk ~2.6.3`，与 ledger 一致）+ `cloudfunctions/remind/config.json`（`permissions.openapi: ['subscribeMessage.send']`）。
+4. **登记到 cloudbaserc.json**：`envId: cloud1-d3gqupt5l5a75414e`；`functions[]` 追加 `remind`（Nodejs16.13 / timeout 20 / memory 256 / installDependency true / ignore `__tests__`+`*.spec.mjs`+`node_modules`）。
+5. **部署**（`tcb fn deploy`，COS 上传，均 `✔ 部署成功`）：
+   - `remind` 首次部署新建成功（`函数 Id lam-kjykhig3`，Nodejs16.13）；
+   - `ledger` `--force` 覆盖部署（`lam-fzit1nsd`，含新 action `subscribe.register`）。
+6. **定时触发器**（`tcb fn trigger create`）：`remind-daily`，cron `0 0 11 * * * *`（每天 11:00，中国时区），Type `timer`，已确认绑定到 remind（`Triggers` 段含 `TriggerDesc {"cron":"0 0 11 * * * *"}`）。
+7. **运行验证**：
+   - `tcb fn invoke remind`（空 event）→ 正确返回 `INVALID_PARAM`（入口守卫生效）；
+   - `tcb fn list` 显示两函数均「部署完成」；`fn detail remind` `CodeResult: success`。
+
+**未取证的诚实标注**
+- `subscribeMessage.send` 的 openapi 权限是否在云端真正生效，需待**有真实用户授权订阅额度后才可用订阅消息实测**（无额度时函数扫空 quota、stat 全 0，不会误发）。权限不足会在真 send 时抛错（保留额度下轮重试），逻辑已兜底。
+- DoD「真机收到订阅消息」留待真机复测：体验版记账 → 授权订阅 → 次日 11 点前不记账 → 观察收件。
